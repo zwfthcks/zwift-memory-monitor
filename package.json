@@ -1,0 +1,26 @@
+{
+  "name": "@zwfthcks/zwift-memory-monitor",
+  "version": "0.0.1",
+  "description": "monitor Zwift memory and emit events for player state updates",
+  "main": "src/index.js",
+  "scripts": {
+    "example": "node src/examples/example.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zwfthcks/zwift-memory-monitor.git"
+  },
+  "author": "Jesper Rosenlund Nielsen",
+  "license": "MIT",
+  "keywords": [
+    "zwift"
+  ],
+  "bugs": {
+    "url": "https://github.com/zwfthcks/zwift-memory-monitor/issues"
+  },
+  "homepage": "https://github.com/zwfthcks/zwift-memory-monitor#readme",
+  "dependencies": {
+    "memoryjs": "github:zwfthcks/memoryjs"
+  }
+}
