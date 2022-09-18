@@ -14,19 +14,21 @@ class ZwiftMemoryMonitor extends EventEmitter {
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
       zwiftapp: 'ZwiftApp.exe',
       offsets: {
-        counter: 0x84,
-        altitude: 0x8c,
-        climbing: 0x60,
-        speed: 0x3c,
-        distance: 0x30,
-        time: 0x64,
-        cadenceUHz: 0x48,
-        heartrate: 0x50,
-        power: 0x54,
-        player: 0x20,
-        // x: 0x??,
-        // y: 0x??,
-        // calories: 0x??,
+        counter: [ 0x84, memoryjs.UINT32 ],
+        climbing: [ 0x60, memoryjs.UINT32 ],
+        speed: [ 0x3c, memoryjs.UINT32 ],
+        distance: [ 0x30, memoryjs.UINT32 ],
+        time: [ 0x64, memoryjs.UINT32 ],
+        cadenceUHz: [ 0x48, memoryjs.UINT32 ],
+        heartrate: [ 0x50, memoryjs.UINT32 ],
+        power: [ 0x54, memoryjs.UINT32 ],
+        player: [ 0x20, memoryjs.UINT32 ],
+        x: [ 0x88, memoryjs.FLOAT ], // ? To be verified
+        y: [ 0xa0, memoryjs.FLOAT ], // ? To be verified
+        altitude: [ 0x8c, memoryjs.FLOAT ], // ? To be verified
+        watching: [ 0x90, memoryjs.UINT32 ],
+        world: [ 0x110, memoryjs.UINT32 ],
+        // calories: [ 0x??, memoryjs.UINT32 ],
       },
       signature: {
         start: '1E 00 00 00 00 00 00 00 00 00 00 00',
@@ -53,8 +55,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this.lasterror = 'Error in openProcess'
       throw new Error('Error in openProcess', `${this._options.zwiftapp}` )
     }
-    
-    console.log('started')
     
     this._addresses = {}
     
@@ -110,7 +110,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
         
         if (this?._baseaddress) {
           Object.keys(this._options.offsets).forEach((key) => {
-            this._addresses[key] = this._baseaddress - this._options.offsets?.player + this._options.offsets[key]
+            this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
           })
           
           console.log(this._addresses)
@@ -154,7 +154,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     if (this._started) {
       try {
         Object.keys(this._options.offsets).forEach((key) => {
-          playerState[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key], memoryjs.UINT32)
+          playerState[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key][0], this._addresses[key][1])
         })
 
         playerState.cadence = Math.floor(playerState?.cadenceUHz / 1000000 * 60)
