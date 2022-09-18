@@ -159,6 +159,13 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
         playerState.cadence = Math.floor(playerState?.cadenceUHz / 1000000 * 60)
 
+        // verify by reading player id back from memory
+        if (this._playerid != memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)) {
+          // Probably because Zwift was closed...
+          this.lasterror = 'Could not verify player ID in memory'
+          throw new Error(this.lasterror)
+        }
+
         this.emit('playerState', playerState)
 
       } catch (e) {
