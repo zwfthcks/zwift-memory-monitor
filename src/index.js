@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path')
 const os = require('os')
 
-
+/**
+ * 
+ */
 class ZwiftMemoryMonitor extends EventEmitter {
   constructor (options = { }) {
     super()
@@ -14,21 +16,23 @@ class ZwiftMemoryMonitor extends EventEmitter {
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
       zwiftapp: 'ZwiftApp.exe',
       offsets: {
-        counter: [ 0x84, memoryjs.UINT32 ],
-        climbing: [ 0x60, memoryjs.UINT32 ],
-        speed: [ 0x3c, memoryjs.UINT32 ],
-        distance: [ 0x30, memoryjs.UINT32 ],
-        time: [ 0x64, memoryjs.UINT32 ],
-        cadenceUHz: [ 0x48, memoryjs.UINT32 ],
-        heartrate: [ 0x50, memoryjs.UINT32 ],
-        power: [ 0x54, memoryjs.UINT32 ],
-        player: [ 0x20, memoryjs.UINT32 ],
-        x: [ 0x88, memoryjs.FLOAT ], // ? To be verified
-        y: [ 0xa0, memoryjs.FLOAT ], // ? To be verified
-        altitude: [ 0x8c, memoryjs.FLOAT ], // ? To be verified
-        watching: [ 0x90, memoryjs.UINT32 ],
-        world: [ 0x110, memoryjs.UINT32 ],
-        // calories: [ 0x??, memoryjs.UINT32 ],
+        // Relative position to player (the baseaddress)
+        // Here calculated as the field specific offset used in MOV minus 0x20 (offset for player in MOV)
+        counter: [ 0x84 - 0x20, memoryjs.UINT32 ],
+        climbing: [ 0x60 - 0x20, memoryjs.UINT32 ],
+        speed: [ 0x3c - 0x20, memoryjs.UINT32 ],
+        distance: [ 0x30 - 0x20, memoryjs.UINT32 ],
+        time: [ 0x64 - 0x20, memoryjs.UINT32 ],
+        cadenceUHz: [ 0x48 - 0x20, memoryjs.UINT32 ],
+        heartrate: [ 0x50 - 0x20, memoryjs.UINT32 ],
+        power: [ 0x54 - 0x20, memoryjs.UINT32 ],
+        player: [ 0x20 - 0x20, memoryjs.UINT32 ],
+        x: [ 0x88 - 0x20, memoryjs.FLOAT ], // ? To be verified
+        y: [ 0xa0 - 0x20, memoryjs.FLOAT ], // ? To be verified
+        altitude: [ 0x8c - 0x20, memoryjs.FLOAT ], // ? To be verified
+        watching: [ 0x90 - 0x20, memoryjs.UINT32 ],
+        world: [ 0x110 - 0x20, memoryjs.UINT32 ],
+        // calories: [ 0x?? - 0x20, memoryjs.UINT32 ],
       },
       signature: {
         start: '1E 00 00 00 00 00 00 00 00 00 00 00',
@@ -44,6 +48,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
   
+  /**
+   * 
+   */
   start() {
     
     this._started = false
@@ -110,7 +117,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
         
         if (this?._baseaddress) {
           Object.keys(this._options.offsets).forEach((key) => {
-            this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+            // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+            this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
           })
           
           console.log(this._addresses)
@@ -131,6 +139,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
   
+  /**
+   * 
+   */
   stop() {
     
     this._started = false
@@ -147,6 +158,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
   
+  /**
+   * 
+   */
   readPlayerState () {
     
     var playerState = {}
