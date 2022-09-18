@@ -14,7 +14,7 @@ npm install https://github.com/zwfthcks/zwift-memory-monitor
 In your code:
 
 `````
-const ZwiftMemoryMonitor = require('ZwiftMemoryMonitor');
+const ZwiftMemoryMonitor = require('@zwfthcks/zwift-memory-monitor');
 const zmm = new ZwiftMemoryMonitor();
 `````
 
