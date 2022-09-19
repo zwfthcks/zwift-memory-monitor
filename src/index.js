@@ -53,89 +53,105 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   start() {
     
+    // console.log('in start()')
+
     this._started = false
+
+    this._retry = this._options?.retry || false
     
     // Find the Zwift process
     try {
       this._processObject = memoryjs.openProcess(this._options.zwiftapp);
     } catch (e) {
       this.lasterror = 'Error in openProcess'
-      throw new Error('Error in openProcess', `${this._options.zwiftapp}` )
+      // throw new Error('Error in openProcess', `${this._options.zwiftapp}` )
     }
     
-    this._addresses = {}
-    
-    this._playerid = this._options?.playerid || 0
-    
-    if (!this._playerid) {
+    if (this?._processObject) {
 
-      // Determine player ID from log.txt
-      console.log('Zwift log file:', this._options.zwiftlog)
-      if (fs.existsSync(this._options.zwiftlog)) {
-        let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
-        
-        // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
-        let patterns = {
-          user :    /\[(?:[^\]]*)\]\s+NETCLIENT:\[INFO\] Player ID: (\d*)/g ,
-        }
-        
-        let match;
-        
-        while ((match = patterns.user.exec(logtxt)) !== null) {
-          this._playerid = parseInt(match[1]);
-        }
-        console.log(`Zwift seems to run with player ID: ${this._playerid} = ${('00000000' + this._playerid.toString(16)).substr(-8)}`)
-        
-      }
-    }
-    
-    if (this?._playerid > 0) {
+      this._addresses = {}
       
-      let signature = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-      console.log(signature);
-      let addressOffset = this._options.signature?.addressOffset || 0;
-      
-      memoryjs.findPattern(this._processObject.handle, signature, memoryjs.NORMAL, addressOffset, (error, address) => {
-        console.log(error, address)
-        if (error && !address) {
-          this.lasterror = error
-        }
-
-        this._baseaddress = address  
-        console.log(`base address: 0x${this._baseaddress.toString(16)}`);
-        
-        if (this?._baseaddress) {
-          // verify by reading back from memory
-          const value = memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)
-          console.log(`value: ${value} = 0x${value.toString(16)}`);
+      this._playerid = this._options?.playerid || 0
+  
+  
+      if (!this._playerid) {
+  
+        // Determine player ID from log.txt
+        console.log('Zwift log file:', this._options.zwiftlog)
+        if (fs.existsSync(this._options.zwiftlog)) {
+          let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
           
-          if (value != this._playerid) {
-            this._baseaddress = 0
-            this.lasterror = 'Could not verify player ID in memory'
+          // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
+          let patterns = {
+            user :    /\[(?:[^\]]*)\]\s+NETCLIENT:\[INFO\] Player ID: (\d*)/g ,
           }
+          
+          let match;
+          
+          while ((match = patterns.user.exec(logtxt)) !== null) {
+            this._playerid = parseInt(match[1]);
+          }
+          console.log(`Zwift seems to run with player ID: ${this._playerid} = ${('00000000' + this._playerid.toString(16)).substr(-8)}`)
+          
         }
-        
-        if (this?._baseaddress) {
-          Object.keys(this._options.offsets).forEach((key) => {
-            // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
-            this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
-          })
-          
-          console.log(this._addresses)
-          
-          this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
-          this._started = true
-
-          this.emit('status.started')
-          
-        } 
-        
-      });
+      }
       
-    } else {
-      this.lasterror = 'Player ID not found'
+      if (this?._playerid > 0) {
+        
+        let signature = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
+        console.log(signature);
+        let addressOffset = this._options.signature?.addressOffset || 0;
+        
+        memoryjs.findPattern(this._processObject.handle, signature, memoryjs.NORMAL, addressOffset, (error, address) => {
+          console.log(error, address)
+          if (error && !address) {
+            this.lasterror = error
+          }
+  
+          this._baseaddress = address  
+          console.log(`base address: 0x${this._baseaddress.toString(16)}`);
+          
+          if (this?._baseaddress) {
+            // verify by reading back from memory
+            const value = memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)
+            console.log(`value: ${value} = 0x${value.toString(16)}`);
+            
+            if (value != this._playerid) {
+              this._baseaddress = 0
+              this.lasterror = 'Could not verify player ID in memory'
+            }
+          }
+          
+          if (this?._baseaddress) {
+            Object.keys(this._options.offsets).forEach((key) => {
+              // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+              this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+            })
+            
+            console.log(this._addresses)
+            
+            this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
+            this._started = true
+  
+            this.emit('status.started')
+            
+          } 
+          
+        });
+        
+      } else {
+        this.lasterror = 'Player ID not found'
+      }
+      
     }
     
+    // If configured in options the wait 10 seconds and try again
+    if (this._retry && !this._started) {
+      this.emit('status.retrying', this.lasterror)
+      this._retryTimeout = setTimeout(() => {
+        this.start()
+      }, 10_000);
+    }
     
   }
   
@@ -148,13 +164,24 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     clearInterval(this._interval)
     
+    if (this?._retryTimeout) {
+      clearTimeout(this._retryTimeout)
+    }
+    
     try {
       memoryjs.closeProcess(this?.processObject?.handle)
     } catch (e) {
       // 
     }
 
+    delete this._processObject
+
     this.emit('status.stopped')
+
+    if (this._options?.keepalive) {
+      this.emit('status.retrying', this.lasterror)
+      this.start()
+    }
     
   }
   
@@ -186,7 +213,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
       } catch (e) {
         // 
-        this.emit('status.stopping')
+        this.emit('status.stopping', this.lasterror)
         this.stop()
       }
 
