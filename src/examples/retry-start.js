@@ -4,6 +4,7 @@ const zmm = new ZwiftMemoryMonitor(
     {
         retry: true,
         keepalive: true,
+        log: console.log,
     }
 )
 

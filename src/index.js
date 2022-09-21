@@ -13,8 +13,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
     super()
 
     this._options = {
+      // zwiftlog: path to log.txt for Zwift
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
+      // zwiftapp: the process name to look for
       zwiftapp: 'ZwiftApp.exe',
+      // offsets: field configuration
       offsets: {
         // Relative position to player (the baseaddress)
         // Here calculated as the field specific offset used in MOV minus 0x20 (offset for player in MOV)
@@ -34,15 +37,30 @@ class ZwiftMemoryMonitor extends EventEmitter {
         world: [ 0x110 - 0x20, memoryjs.UINT32 ],
         // calories: [ 0x?? - 0x20, memoryjs.UINT32 ],
       },
+      // signature: pattern to search for
       signature: {
         start: '1E 00 00 00 00 00 00 00 00 00 00 00',
         end: '00 00 00 00',
         addressOffset: 12
       },
+      // timeout: interval between reading memory
       timeout: 100,
+      // retry: keep retrying start() until success
+      retry: false, 
+      // keepalive: try to start() again after process disappears
+      keepalive: false,
+      // override with called options:
       ...options
     }
     
+    // other supported options:
+    // log: function for logging, e.g. console.log
+    // playerid: use this playerid and do not attempt to detect it from log.txt
+
+    // log can be set to e.g. console.log in options
+    this.log = this._options?.log || (() => { }) 
+
+    // initial values
     this._started = false
     
     
@@ -53,12 +71,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   start() {
     
-    // console.log('in start()')
+    this.log('in start()')
 
     this._started = false
 
     this._retry = this._options?.retry || false
-    
+
     // Find the Zwift process
     try {
       this._processObject = memoryjs.openProcess(this._options.zwiftapp);
@@ -77,7 +95,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (!this._playerid) {
   
         // Determine player ID from log.txt
-        console.log('Zwift log file:', this._options.zwiftlog)
+        this.log('Zwift log file:', this._options.zwiftlog)
         if (fs.existsSync(this._options.zwiftlog)) {
           let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
           
@@ -91,7 +109,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
           while ((match = patterns.user.exec(logtxt)) !== null) {
             this._playerid = parseInt(match[1]);
           }
-          console.log(`Zwift seems to run with player ID: ${this._playerid} = ${('00000000' + this._playerid.toString(16)).substr(-8)}`)
+          this.log(`Zwift seems to run with player ID: ${this._playerid} = ${('00000000' + this._playerid.toString(16)).substr(-8)}`)
           
         }
       }
@@ -99,22 +117,22 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (this?._playerid > 0) {
         
         let signature = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-        console.log(signature);
+        this.log(signature);
         let addressOffset = this._options.signature?.addressOffset || 0;
         
         memoryjs.findPattern(this._processObject.handle, signature, memoryjs.NORMAL, addressOffset, (error, address) => {
-          console.log(error, address)
+          this.log(error, address)
           if (error && !address) {
             this.lasterror = error
           }
   
           this._baseaddress = address  
-          console.log(`base address: 0x${this._baseaddress.toString(16)}`);
+          this.log(`base address: 0x${this._baseaddress.toString(16)}`);
           
           if (this?._baseaddress) {
             // verify by reading back from memory
             const value = memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)
-            console.log(`value: ${value} = 0x${value.toString(16)}`);
+            this.log(`value: ${value} = 0x${value.toString(16)}`);
             
             if (value != this._playerid) {
               this._baseaddress = 0
@@ -128,7 +146,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
               this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
             })
             
-            console.log(this._addresses)
+            this.log(this._addresses)
             
             this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
             this._started = true
