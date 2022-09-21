@@ -19,13 +19,13 @@ const zmm = new ZwiftMemoryMonitor(
 )
 
 
-zmm.on('status.started', () => {
-    console.log('status.started')
-
     zmm.on('playerState', (playerState) => {
         console.log( ansiEscapes.clearTerminal + ansiEscapes.cursorTo(0,0))
         console.log(playerState)
     })
+
+zmm.on('status.started', () => {
+    console.log('status.started')
 
     // stop after 200 seconds 
     setTimeout(() => {

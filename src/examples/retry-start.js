@@ -8,17 +8,20 @@ const zmm = new ZwiftMemoryMonitor(
     }
 )
 
+
+zmm.on('playerState', (playerState) => {
+    console.log(playerState)
+})
+
+
 zmm.on('status.started', (...args) => {
     console.log('status.started', args)
 
-    zmm.on('playerState', (playerState) => {
-        console.log(playerState)
-    })
-
-    // stop after 200 seconds 
+    // Provoking an error 30 seconds (only for demo purposes)
     setTimeout(() => {
-        zmm.stop()    
-    }, 200000);
+        console.log('Provoking an error....')
+        zmm._playerid = 1234    
+    }, 30_000);
 
 })
 
