@@ -223,7 +223,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
         })
 
         if (playerState?.cadenceUHz) {
-          playerState.cadence = Math.floor(playerState?.cadenceUHz / 1000000 * 60)
+          playerState.cadence = Math.round(playerState?.cadenceUHz / 1000000 * 60)
         }
 
         // verify by reading player id back from memory
