@@ -89,31 +89,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
       this._addresses = {}
       
-      this._playerid = this._options?.playerid || 0
+      this._playerid = this._options?.playerid || this._getPlayerid() || 0
   
-  
-      if (!this._playerid) {
-  
-        // Determine player ID from log.txt
-        this.log('Zwift log file:', this._options.zwiftlog)
-        if (fs.existsSync(this._options.zwiftlog)) {
-          let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
-          
-          // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
-          let patterns = {
-            user :    /\[(?:[^\]]*)\]\s+NETCLIENT:\[INFO\] Player ID: (\d*)/g ,
-          }
-          
-          let match;
-          
-          while ((match = patterns.user.exec(logtxt)) !== null) {
-            this._playerid = parseInt(match[1]);
-          }
-          this.log(`Zwift seems to run with player ID: ${this._playerid} = ${('00000000' + this._playerid.toString(16)).substr(-8)}`)
-          
-        }
-      }
-      
       if (this?._playerid > 0) {
         
         let signature = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
@@ -236,9 +213,51 @@ class ZwiftMemoryMonitor extends EventEmitter {
       }
 
     }
-
-
   }
+
+
+  _getPlayerid() {
+    // Determine player ID from log.txt
+    this.log('Zwift log file:', this._options.zwiftlog)
+    if (fs.existsSync(this._options.zwiftlog)) {
+      let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
+      
+      // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
+      let patterns = {
+        user :    /\[(?:[^\]]*)\]\s+NETCLIENT:\[INFO\] Player ID: (\d*)/g ,
+      }
+      
+      let match;
+      
+      while ((match = patterns.user.exec(logtxt)) !== null) {
+        let playerid = parseInt(match[1]);
+        this.log(`Zwift seems to run with player ID: ${playerid} = ${('00000000' + playerid.toString(16)).substr(-8)}`)
+        return playerid
+      }
+    } 
+  }
+
+
+  _getGameVersion() {
+    // Determine game version from log.txt
+    this.log('Zwift log file:', this._options.zwiftlog)
+    if (fs.existsSync(this._options.zwiftlog)) {
+      let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
+
+      // [15:56:28] Game Version: 1.26.1(101164) dda86fe0235debd7146c0d8ceb1b0d5d626ddf77
+      let patterns = {
+        version :    /\[(?:[^\]]*)\]\s+Game Version: ((?:\d+)\.(?:\d+)\.(?:\d+))/g ,
+      }
+      
+      let match;
+      
+      while ((match = patterns.version.exec(logtxt)) !== null) {
+        this.log(`Zwift seems to be version: ${match[1]}`)
+        return match[1];
+      }
+    } 
+  }
+
   
 }
 
