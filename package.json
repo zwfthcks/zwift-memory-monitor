@@ -22,7 +22,8 @@
   },
   "homepage": "https://github.com/zwfthcks/zwift-memory-monitor#readme",
   "dependencies": {
-    "memoryjs": "github:zwfthcks/memoryjs"
+    "memoryjs": "github:zwfthcks/memoryjs",
+    "semver": "^7.3.7"
   },
   "devDependencies": {
     "ansi-escapes": "4.3.2"
