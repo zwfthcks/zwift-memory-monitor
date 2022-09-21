@@ -22,16 +22,14 @@ function asChild() {
     // console.log('last error:', zmm.lasterror)
     process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror })
     
+    zmm.on('playerState', (playerState) => {
+        // console.log(playerState)
+        process.send({ type: 'playerstate', payload: playerState })
+    })
     
     zmm.on('status.started', () => {
         // console.log('status.started')
         process.send({ type: 'status', payload: 'status.started' })
-        
-        zmm.on('playerState', (playerState) => {
-            // console.log(playerState)
-            process.send({ type: 'playerstate', payload: playerState })
-
-        })
         
         // stop after 20 seconds 
         setTimeout(() => {
