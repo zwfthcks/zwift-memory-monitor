@@ -79,8 +79,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   start() {
     
-    this.log('in start()')
-
     this._started = false
 
     this._retry = this._options?.retry || false
