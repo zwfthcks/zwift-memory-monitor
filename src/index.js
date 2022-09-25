@@ -15,6 +15,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     // bind this for functions
     this._checkBaseAddress = this._checkBaseAddress.bind(this)
+    this._getCachedScan = this._getCachedScan.bind(this)
+    this._saveCachedScan = this._saveCachedScan.bind(this)
     this.readPlayerState = this.readPlayerState.bind(this)
 
     // initialise _options object with defaults and user set options
@@ -130,31 +132,13 @@ class ZwiftMemoryMonitor extends EventEmitter {
         let addressOffset = this._options.signature?.addressOffset || 0;
         // let addressOffset = lookup.signature?.addressOffset || 0;
         
-        let cachedScan = {};
+        let cachedScan = undefined;
 
-        if (!forceScan && fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
-          try {
-            cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
-          } catch (e) {
-            cachedScan = {}
-            try {
-              fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
-            } catch (e) {}
-          }
-
-          if ((this._processObject.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
-            (this._processObject.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
-            (this._processObject.szExeFile !== cachedScan?.processObject?.szExeFile)) {
-            // Cached scan is not for the current process object so ignore and delete it
-            cachedScan = {}
-            try {
-              fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
-            } catch (e) {}
-          }
-
+        if (!forceScan) {
+          cachedScan = this._getCachedScan()
         }
 
-        if (forceScan || !cachedScan.baseaddress) {
+        if (forceScan || !cachedScan?.baseaddress) {
           memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
         } else {
           this._checkBaseAddress(null, cachedScan.baseaddress)
@@ -198,16 +182,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (value != this._playerid) {
         this._baseaddress = 0
         this.lasterror = 'Could not verify player ID in memory'
-        try {
-          fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
-        } catch (e) {}
+        this._deleteCachedScan()
       } else {
-        try {
-          fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify({
-            processObject: this._processObject,
-            baseaddress: this._baseaddress
-          }))
-        } catch (e) { }
+        this._saveCachedScan({
+          processObject: this._processObject,
+          baseaddress: this._baseaddress
+        })
       }
     }
     
@@ -341,6 +321,44 @@ class ZwiftMemoryMonitor extends EventEmitter {
     } 
   }
 
+
+
+  _getCachedScan() {
+    let cachedScan = undefined
+
+    if (fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
+      try {
+        cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
+      } catch (e) {
+        cachedScan = null
+        this._deleteCachedScan()
+      }
+
+      if ((this._processObject.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
+        (this._processObject.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
+        (this._processObject.szExeFile !== cachedScan?.processObject?.szExeFile)) {
+        // Cached scan is not for the current process object so ignore and delete it
+        cachedScan = null
+        this._deleteCachedScan()
+      }
+    }
+
+    return cachedScan
+  }
+
+  _deleteCachedScan() {
+    try {
+      fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+    } catch (e) {}
+  }
+
+  _saveCachedScan(cachedScan) {
+    try {
+      fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify(cachedScan))
+    } catch (e) {
+      this._deleteCachedScan()
+    }
+  }
   
 }
 
