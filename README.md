@@ -19,3 +19,12 @@ const zmm = new ZwiftMemoryMonitor();
 `````
 
 See also src/examples/example.js
+
+
+
+## Miscellaneous
+
+### Calculated fields
+
+- ```cadence``` (rpm) is calculated from ````cadence_uHz```` (uHz)
+- ````calories```` (kCal) is calculated from ````work```` (mWh)
