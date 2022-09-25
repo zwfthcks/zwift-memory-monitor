@@ -77,7 +77,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
   /**
    * 
    */
-  start() {
+  start(forceScan = false) {
     
     this._started = false
 
@@ -126,42 +126,36 @@ class ZwiftMemoryMonitor extends EventEmitter {
         let addressOffset = this._options.signature?.addressOffset || 0;
         // let addressOffset = lookup.signature?.addressOffset || 0;
         
-        memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, (error, address) => {
-          this.log(error, address)
-          if (error && !address) {
-            this.lasterror = error
+        let cachedScan = {};
+
+        if (!forceScan && fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
+          try {
+            cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
+          } catch (e) {
+            cachedScan = {}
+            try {
+              fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+            } catch (e) {}
           }
-  
-          this._baseaddress = address  
-          this.log(`base address: 0x${this._baseaddress.toString(16)}`);
-          
-          if (this?._baseaddress) {
-            // verify by reading back from memory
-            const value = memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)
-            this.log(`value: ${value} = 0x${value.toString(16)}`);
-            
-            if (value != this._playerid) {
-              this._baseaddress = 0
-              this.lasterror = 'Could not verify player ID in memory'
-            }
+
+          if ((this._processObject.th32ProcessID !== cachedScan.processObject.th32ProcessID) ||
+            (this._processObject.th32ParentProcessID !== cachedScan.processObject.th32ParentProcessID) ||
+            (this._processObject.szExeFile !== cachedScan.processObject.szExeFile) ) {
+            cachedScan = {}
+            try {
+              fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+            } catch (e) {}
           }
-          
-          if (this?._baseaddress) {
-            Object.keys(this._options.offsets).forEach((key) => {
-              // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
-              this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
-            })
-            
-            this.log(this._addresses)
-            
-            this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
-            this._started = true
-  
-            this.emit('status.started')
-            
-          } 
-          
-        });
+
+        }
+
+        if (forceScan || !cachedScan.baseaddress) {
+          memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress.bind(this));
+        } else {
+          let check  = this._checkBaseAddress.bind(this)
+          check(null, cachedScan.baseaddress)
+        }
+
         
       } else {
         this.lasterror = 'Player ID not found'
@@ -179,6 +173,58 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
   
+
+  /**
+   * 
+   */
+  _checkBaseAddress(error, address) {
+    this.log(error, address)
+    if (error && !address) {
+      this.lasterror = error
+    }
+
+    this._baseaddress = address  
+    this.log(`base address: 0x${this._baseaddress.toString(16)}`);
+    
+    if (this?._baseaddress) {
+      // verify by reading back from memory
+      const value = memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)
+      this.log(`value: ${value} = 0x${value.toString(16)}`);
+      
+      if (value != this._playerid) {
+        this._baseaddress = 0
+        this.lasterror = 'Could not verify player ID in memory'
+        try {
+          fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+        } catch (e) {}
+      } else {
+        try {
+          fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify({
+            processObject: this._processObject,
+            baseaddress: this._baseaddress
+          }))
+        } catch (e) { }
+      }
+    }
+    
+    if (this?._baseaddress) {
+      Object.keys(this._options.offsets).forEach((key) => {
+        // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+        this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
+      })
+      
+      this.log(this._addresses)
+      
+      this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
+      this._started = true
+
+      this.emit('status.started')
+      
+    } 
+    
+  }
+
+
   /**
    * 
    */
