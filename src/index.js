@@ -13,6 +13,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
   constructor (options = { }) {
     super()
 
+    // bind this for functions
+    this._checkBaseAddress = this._checkBaseAddress.bind(this)
+    this.readPlayerState = this.readPlayerState.bind(this)
+
+    // initialise _options object with defaults and user set options
     this._options = {
       // zwiftlog: path to log.txt for Zwift
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
@@ -137,9 +142,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
             } catch (e) {}
           }
 
-          if ((this._processObject.th32ProcessID !== cachedScan.processObject.th32ProcessID) ||
-            (this._processObject.th32ParentProcessID !== cachedScan.processObject.th32ParentProcessID) ||
-            (this._processObject.szExeFile !== cachedScan.processObject.szExeFile) ) {
+          if ((this._processObject.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
+            (this._processObject.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
+            (this._processObject.szExeFile !== cachedScan?.processObject?.szExeFile)) {
+            // Cached scan is not for the current process object so ignore and delete it
             cachedScan = {}
             try {
               fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
@@ -149,10 +155,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
         }
 
         if (forceScan || !cachedScan.baseaddress) {
-          memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress.bind(this));
+          memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
         } else {
-          let check  = this._checkBaseAddress.bind(this)
-          check(null, cachedScan.baseaddress)
+          this._checkBaseAddress(null, cachedScan.baseaddress)
         }
 
         
@@ -214,7 +219,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       this.log(this._addresses)
       
-      this._interval = setInterval(this.readPlayerState.bind(this), this._options.timeout)
+      this._interval = setInterval(this.readPlayerState, this._options.timeout)
       this._started = true
 
       this.emit('status.started')
