@@ -6,8 +6,11 @@
   "scripts": {
     "example": "node src/examples/example.js",
     "example-retry": "node src/examples/retry-start.js",
+    "example-fetch": "node src/examples/example-fetch.js",
+    "example-fetch-nourl": "node src/examples/example-fetch-nourl.js",
     "example-lookup": "node src/examples/version-lookup.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-lookup": "node src/util/build-lookup.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +27,7 @@
   "homepage": "https://github.com/zwfthcks/zwift-memory-monitor#readme",
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
+    "node-fetch": "^3.2.10",
     "semver": "^7.3.7"
   },
   "devDependencies": {

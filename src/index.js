@@ -2,15 +2,24 @@ const EventEmitter = require('events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
 
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 const fs = require('fs');
 const path = require('path')
 const os = require('os')
+
+const lookup = require('./lookup.js')
 
 /**
  * 
  */
 class ZwiftMemoryMonitor extends EventEmitter {
-  constructor (options = { }) {
+  
+  /**
+   * 
+   * @param {*} options 
+   */
+  constructor(options = {}) {
     super()
 
     // bind this for functions
@@ -26,37 +35,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // zwiftapp: the process name to look for
       zwiftapp: 'ZwiftApp.exe',
       // lookup: lookup table with version specific configuration
-      lookup: [
-        {
-          // version: version numbers matching the pattern and positions
-          versions: "*",
-          // offsets: field configuration
-          offsets: {
-            // Relative position to player (the baseaddress)
-            // Here calculated as the field specific offset used in MOV minus 0x20 (offset for player in MOV)
-            climbing: [0x60 - 0x20, memoryjs.UINT32],
-            speed: [0x3c - 0x20, memoryjs.UINT32],
-            distance: [0x30 - 0x20, memoryjs.UINT32],
-            time: [0x64 - 0x20, memoryjs.UINT32],
-            cadence_uHz: [0x48 - 0x20, memoryjs.UINT32], // unit uHz
-            heartrate: [0x50 - 0x20, memoryjs.UINT32],
-            power: [0x54 - 0x20, memoryjs.UINT32],
-            player: [0x20 - 0x20, memoryjs.UINT32],
-            x: [0x88 - 0x20, memoryjs.FLOAT], // To be verified
-            y: [0xa0 - 0x20, memoryjs.FLOAT], // To be verified
-            altitude: [0x8c - 0x20, memoryjs.FLOAT], // To be verified
-            watching: [0x90 - 0x20, memoryjs.UINT32],
-            world: [0x110 - 0x20, memoryjs.UINT32],
-            work: [ 0x84 - 0x20, memoryjs.UINT32 ],  // unit mWh
-          },
-          // signature: pattern to search for
-          signature: {
-            start: '1E 00 00 00 00 00 00 00 00 00 00 00',
-            end: '00 00 00 00',
-            addressOffset: 12
-          },
-        }
-      ],
+      lookup: lookup,
       // timeout: interval between reading memory
       timeout: 100,
       // retry: keep retrying start() until success
@@ -77,9 +56,35 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // initial values
     this._started = false
     
-    
+  }
+
+
+  /**
+   * 
+   * @param {*} fetchLookupURL 
+   */  
+  load(fetchLookupURL) {
+    // 
+    if (!fetchLookupURL) {
+      this.log('no fetchURL')
+      this.emit('status.loaded')
+      
+    } else {
+      fetch(fetchLookupURL)
+      .then((response) => {
+        return response.json();
+      })
+      .catch()
+      .then((data) => {
+        this.log(JSON.stringify(data, '', 2))
+        this._options.lookup = data
+        this.emit('status.loaded')
+      })
+        .catch()
+    }
   }
   
+
   /**
    * 
    */
@@ -278,7 +283,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
   }
 
-
+  /**
+   * 
+   * @returns playerid: integer
+   */
   _getPlayerid() {
     // Determine player ID from log.txt
     this.log('Zwift log file:', this._options.zwiftlog)
@@ -300,7 +308,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
     } 
   }
 
-
+  /**
+   * 
+   * @returns string
+   */
   _getGameVersion() {
     // Determine game version from log.txt
     this.log('Zwift log file:', this._options.zwiftlog)
@@ -322,7 +333,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
 
-
+  /**
+   * 
+   * @returns object
+   */
   _getCachedScan() {
     let cachedScan = undefined
 
@@ -346,16 +360,24 @@ class ZwiftMemoryMonitor extends EventEmitter {
     return cachedScan
   }
 
+  /**
+     * 
+     */
   _deleteCachedScan() {
     try {
       fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
     } catch (e) {}
   }
 
+  /**
+   * 
+   * @param {*} cachedScan 
+   */
   _saveCachedScan(cachedScan) {
     try {
       fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify(cachedScan))
     } catch (e) {
+      // delete cache in case of any error during write
       this._deleteCachedScan()
     }
   }
