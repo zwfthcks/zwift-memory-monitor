@@ -257,11 +257,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
           playerState[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key][0], this._addresses[key][1])
         })
 
-        if (playerState?.cadence_uHz) {
+        if (playerState?.cadence_uHz >= 0) {
           playerState.cadence = Math.round(playerState?.cadence_uHz / 1000000 * 60)
         }
 
-        if (playerState?.work) {
+        if (playerState?.work >= 0) {
           playerState.calories = Math.round(playerState?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
         }
 
