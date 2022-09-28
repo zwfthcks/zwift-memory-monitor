@@ -17,6 +17,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
   /**
    * 
+   * @constructor
    * @param {*} options 
    */
   constructor(options = {}) {
@@ -61,7 +62,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
   /**
    * 
-   * @param {*} fetchLookupURL 
+   * @param {string} fetchLookupURL 
    */  
   load(fetchLookupURL) {
     // 
@@ -87,6 +88,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
   /**
    * 
+   * @param {boolean} forceScan 
    */
   start(forceScan = false) {
     
@@ -167,6 +169,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
   /**
    * 
+   * @param {*} error 
+   * @param {*} address 
    */
   _checkBaseAddress(error, address) {
     this.log(error, address)
@@ -282,7 +286,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
   /**
    * 
-   * @returns playerid: integer
+   * @returns {integer} playerid
    */
   _getPlayerid() {
     // Determine player ID from log.txt
