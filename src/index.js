@@ -1,3 +1,10 @@
+/**
+ * @module @zwfthcks/ZwiftMemoryMonitor
+ * 
+ */
+
+
+
 const EventEmitter = require('events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
@@ -31,7 +38,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // bind this for functions
     this._checkBaseAddress = this._checkBaseAddress.bind(this)
     this._getCachedScan = this._getCachedScan.bind(this)
-    this._saveCachedScan = this._saveCachedScan.bind(this)
+    this._writeCachedScanFile = this._writeCachedScanFile.bind(this)
+    this._readCachedScanFile = this._readCachedScanFile.bind(this)
     this.readPlayerState = this.readPlayerState.bind(this)
 
     // initialise _options object with defaults and user set options
@@ -66,7 +74,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   *
+   * 
    *
    * @param {*} fetchLookupURL
    * @memberof ZwiftMemoryMonitor
@@ -206,9 +214,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (value != this._playerid) {
         this._baseaddress = 0
         this.lasterror = 'Could not verify player ID in memory'
-        this._deleteCachedScan()
+        this._deleteCachedScanFile()
       } else {
-        this._saveCachedScan({
+        this._writeCachedScanFile({
           processObject: this._processObject,
           baseaddress: this._baseaddress
         })
@@ -366,7 +374,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   *
+   * Get a cached scan object if it exists and matches the currently running Zwift process
    *
    * @return {*} 
    * @memberof ZwiftMemoryMonitor
@@ -374,20 +382,16 @@ class ZwiftMemoryMonitor extends EventEmitter {
   _getCachedScan() {
     let cachedScan = undefined
 
-    if (fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
-      try {
-        cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
-      } catch (e) {
-        cachedScan = null
-        this._deleteCachedScan()
-      }
+    cachedScan = this._readCachedScanFile()
 
+    if (cachedScan) {
+      // compare with the current Zwift process object:
       if ((this._processObject.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
         (this._processObject.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
         (this._processObject.szExeFile !== cachedScan?.processObject?.szExeFile)) {
         // Cached scan is not for the current process object so ignore and delete it
         cachedScan = null
-        this._deleteCachedScan()
+        this._deleteCachedScanFile()
       }
     }
 
@@ -395,11 +399,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
   /**
-   *
+   * Delete cached scan file in temp folder
    *
    * @memberof ZwiftMemoryMonitor
    */
-  _deleteCachedScan() {
+  _deleteCachedScanFile() {
     try {
       fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
     } catch (e) {}
@@ -407,18 +411,45 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   *
+   * Write object to cached scan file in temp folder
    *
    * @param {*} cachedScan
    * @memberof ZwiftMemoryMonitor
    */
-  _saveCachedScan(cachedScan) {
+  _writeCachedScanFile(cachedScan) {
     try {
       fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify(cachedScan))
     } catch (e) {
       // delete cache in case of any error during write
-      this._deleteCachedScan()
+      this._deleteCachedScanFile()
     }
+  }
+  
+
+
+  /**
+   * Read cached scan file from temp folder and return the saved object if found.
+   * In case of errors, the cache file will be deleted.
+   *
+   * @return 
+   * @memberof ZwiftMemoryMonitor
+   */
+  _readCachedScanFile() {
+
+    let cachedScan = undefined
+
+    if (fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
+      try {
+        cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
+      } catch (e) {
+        cachedScan = null
+        // this._deleteCachedScanFile()
+        this._deleteCachedScanFile()
+      }
+
+    }
+    
+    return cachedScan
   }
   
 }
