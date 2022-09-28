@@ -19,7 +19,8 @@ const lookup = require('./lookup.js')
 
 
 /**
- *
+ * ZwiftMemoryMonitor
+ * 
  *
  * @class ZwiftMemoryMonitor
  * @extends {EventEmitter}
