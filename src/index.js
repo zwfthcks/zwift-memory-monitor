@@ -10,15 +10,20 @@ const os = require('os')
 
 const lookup = require('./lookup.js')
 
+
 /**
- * 
+ *
+ *
+ * @class ZwiftMemoryMonitor
+ * @extends {EventEmitter}
  */
 class ZwiftMemoryMonitor extends EventEmitter {
   
+  
   /**
-   * 
-   * @constructor
-   * @param {*} options 
+   * Creates an instance of ZwiftMemoryMonitor.
+   * @param {*} [options={}]
+   * @memberof ZwiftMemoryMonitor
    */
   constructor(options = {}) {
     super()
@@ -61,9 +66,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   * 
-   * @param {string} fetchLookupURL 
-   */  
+   *
+   *
+   * @param {*} fetchLookupURL
+   * @memberof ZwiftMemoryMonitor
+   */
   load(fetchLookupURL) {
     // 
     if (!fetchLookupURL) {
@@ -87,8 +94,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
 
   /**
-   * 
-   * @param {boolean} forceScan 
+   *
+   *
+   * @param {boolean} [forceScan=false]
+   * @memberof ZwiftMemoryMonitor
    */
   start(forceScan = false) {
     
@@ -168,9 +177,17 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
 
   /**
-   * 
    * @param {*} error 
    * @param {*} address 
+   */
+  /**
+   * Internal method. Used as callback to findPattern in .start
+   * Verifies the found address by reading player ID from memory.
+   * Emits status.started on success
+   * @param {*} error
+   * @param {*} address
+   * @fires status.started
+   * @memberof ZwiftMemoryMonitor
    */
   _checkBaseAddress(error, address) {
     this.log(error, address)
@@ -216,7 +233,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   * 
+   *
+   *
+   * @fires status.stopped
+   * @fires status.retrying
+   * @memberof ZwiftMemoryMonitor
    */
   stop() {
     
@@ -246,7 +267,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
   
   /**
-   * 
+   *
+   * @fires playerState
+   * @fires status.stopping
+   * @memberof ZwiftMemoryMonitor
    */
   readPlayerState () {
     
@@ -284,9 +308,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
   }
 
+
   /**
-   * 
-   * @returns {integer} playerid
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getPlayerid() {
     // Determine player ID from log.txt
@@ -309,9 +336,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
     } 
   }
 
+ 
   /**
-   * 
-   * @returns string
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getGameVersion() {
     // Determine game version from log.txt
@@ -334,9 +364,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
 
+
   /**
-   * 
-   * @returns object
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getCachedScan() {
     let cachedScan = undefined
@@ -362,17 +395,22 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
   /**
-     * 
-     */
+   *
+   *
+   * @memberof ZwiftMemoryMonitor
+   */
   _deleteCachedScan() {
     try {
       fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
     } catch (e) {}
   }
 
+
   /**
-   * 
-   * @param {*} cachedScan 
+   *
+   *
+   * @param {*} cachedScan
+   * @memberof ZwiftMemoryMonitor
    */
   _saveCachedScan(cachedScan) {
     try {
