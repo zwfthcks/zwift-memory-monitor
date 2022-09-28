@@ -132,10 +132,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (this._options?.signature && this?._playerid > 0) {
         
         let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-        // let pattern = `${lookup.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${lookup.signature?.end}`
         this.log(pattern);
         let addressOffset = this._options.signature?.addressOffset || 0;
-        // let addressOffset = lookup.signature?.addressOffset || 0;
         
         let cachedScan = undefined;
 
@@ -198,7 +196,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
     if (this?._baseaddress) {
       Object.keys(this._options.offsets).forEach((key) => {
-        // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
         this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
       })
       
