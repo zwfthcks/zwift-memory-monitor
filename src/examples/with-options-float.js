@@ -6,7 +6,7 @@ var offsets = {}
 
 // generating the offsets to be read from memory
 for (let i = 0x00; i < 0x130; i = i + 4) {
-    offsets[ `floatx${('000' + i.toString(16)).substr(-3)}`] = [ i - 0x20, 'float']
+    offsets[ `floatx${('000' + i.toString(16)).slice(-3)}`] = [ i - 0x20, 'float']
 }
 
 // console.log(offsets)

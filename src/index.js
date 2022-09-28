@@ -131,8 +131,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
       if (this._options?.signature && this?._playerid > 0) {
         
-        let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-        // let pattern = `${lookup.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${lookup.signature?.end}`
+        let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
+        // let pattern = `${lookup.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${lookup.signature?.end}`
         this.log(pattern);
         let addressOffset = this._options.signature?.addressOffset || 0;
         // let addressOffset = lookup.signature?.addressOffset || 0;
