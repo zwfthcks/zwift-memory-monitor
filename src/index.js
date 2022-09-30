@@ -406,7 +406,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   _deleteCachedScanFile() {
     try {
-      fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+      fs.rmSync(this._getCachedScanFileName())
     } catch (e) {}
   }
 
@@ -419,7 +419,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   _writeCachedScanFile(cachedScan) {
     try {
-      fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify(cachedScan))
+      fs.writeFileSync(this._getCachedScanFileName(), JSON.stringify(cachedScan))
     } catch (e) {
       // delete cache in case of any error during write
       this._deleteCachedScanFile()
@@ -439,9 +439,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     let cachedScan = undefined
 
-    if (fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
+    if (fs.existsSync(this._getCachedScanFileName())) {
       try {
-        cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
+        cachedScan = JSON.parse(fs.readFileSync(this._getCachedScanFileName(), 'utf8') || '{}')
       } catch (e) {
         cachedScan = null
         // this._deleteCachedScanFile()
@@ -451,6 +451,33 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
     
     return cachedScan
+  }
+  
+  /**
+   *
+   * @return 
+   * @memberof ZwiftMemoryMonitor
+   */
+  _getCachedScanFileName() {
+    
+    if (!this._cachedScanFileName) {
+      // console.log('must find cache filename')
+      const crypto = require('crypto');
+      // console.log('required crypto')
+      
+      // Creating Hash
+      const hash = crypto.createHash('sha256', JSON.stringify(this._options?.lookup));
+      // console.log('has defined hash')
+      hash.update(JSON.stringify(this?._options?.lookup) || []);
+      // console.log('has updated hash')
+      const suffix = hash.digest().toString('hex')
+      // console.log('got suffix',suffix)
+      
+      this._cachedScanFileName = path.join(os.tmpdir(), `zwift-memory-monitor_${suffix}`)
+      this.log('Cache file:',this._cachedScanFileName)
+    }
+
+    return this._cachedScanFileName
   }
   
 }
