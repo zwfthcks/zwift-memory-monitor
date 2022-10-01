@@ -22,7 +22,7 @@ function asChild() {
     // console.log('last error:', zmm.lasterror)
     process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror })
     
-    zmm.on('playerState', (playerState) => {
+    zmm.on('data', (playerState) => {
         // console.log(playerState)
         process.send({ type: 'playerstate', payload: playerState })
     })

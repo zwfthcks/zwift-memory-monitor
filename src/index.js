@@ -41,7 +41,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this._getCachedScan = this._getCachedScan.bind(this)
     this._writeCachedScanFile = this._writeCachedScanFile.bind(this)
     this._readCachedScanFile = this._readCachedScanFile.bind(this)
-    this.readPlayerState = this.readPlayerState.bind(this)
+    this.readPlayerData = this.readPlayerData.bind(this)
 
     // initialise _options object with defaults and user set options
     this._options = {
@@ -276,7 +276,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       this.log(this._addresses)
       
-      this._interval = setInterval(this.readPlayerState, this._options.timeout)
+      this._interval = setInterval(this.readPlayerData, this._options.timeout)
       this._started = true
 
       this.emit('status.started')
@@ -322,26 +322,26 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
   /**
    *
-   * @fires playerState
+   * @fires playerData
    * @fires status.stopping
    * @memberof ZwiftMemoryMonitor
    */
-  readPlayerState () {
+  readPlayerData () {
     
-    var playerState = {}
+    var playerData = {}
 
     if (this._started) {
       try {
         Object.keys(this._options.offsets).forEach((key) => {
-          playerState[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key][0], this._addresses[key][1])
+          playerData[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key][0], this._addresses[key][1])
         })
 
-        if (playerState?.cadence_uHz >= 0) {
-          playerState.cadence = Math.round(playerState?.cadence_uHz / 1000000 * 60)
+        if (playerData?.cadence_uHz >= 0) {
+          playerData.cadence = Math.round(playerData?.cadence_uHz / 1000000 * 60)
         }
 
-        if (playerState?.work >= 0) {
-          playerState.calories = Math.round(playerState?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
+        if (playerData?.work >= 0) {
+          playerData.calories = Math.round(playerData?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
         }
 
         // verify by reading player id back from memory
@@ -351,7 +351,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
           throw new Error(this.lasterror)
         }
 
-        this.emit('playerState', playerState)
+        this.emit('data', playerData)
 
       } catch (e) {
         // 

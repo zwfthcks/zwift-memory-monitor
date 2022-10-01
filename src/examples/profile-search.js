@@ -32,8 +32,8 @@ const zmm = new ZwiftMemoryMonitor(
   
   console.log('last error:', zmm.lasterror)
   
-  zmm.on('playerState', (playerState) => {
-    console.log(playerState)
+  zmm.on('data', (playerProfile) => {
+    console.log(playerProfile)
   })
   
   zmm.on('status.started', () => {
