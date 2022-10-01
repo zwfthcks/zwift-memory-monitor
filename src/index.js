@@ -1,3 +1,10 @@
+/**
+ * @module @zwfthcks/ZwiftMemoryMonitor
+ * 
+ */
+
+
+
 const EventEmitter = require('events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
@@ -8,16 +15,23 @@ const fs = require('fs');
 const path = require('path')
 const os = require('os')
 
-const lookup = require('./lookup.js')
+const lookupPatterns = require('./lookup.js')
+
 
 /**
+ * ZwiftMemoryMonitor
  * 
+ *
+ * @class ZwiftMemoryMonitor
+ * @extends {EventEmitter}
  */
 class ZwiftMemoryMonitor extends EventEmitter {
   
+  
   /**
-   * 
-   * @param {*} options 
+   * Creates an instance of ZwiftMemoryMonitor.
+   * @param {*} [options={}]
+   * @memberof ZwiftMemoryMonitor
    */
   constructor(options = {}) {
     super()
@@ -25,7 +39,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // bind this for functions
     this._checkBaseAddress = this._checkBaseAddress.bind(this)
     this._getCachedScan = this._getCachedScan.bind(this)
-    this._saveCachedScan = this._saveCachedScan.bind(this)
+    this._writeCachedScanFile = this._writeCachedScanFile.bind(this)
+    this._readCachedScanFile = this._readCachedScanFile.bind(this)
     this.readPlayerState = this.readPlayerState.bind(this)
 
     // initialise _options object with defaults and user set options
@@ -34,8 +49,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
       // zwiftapp: the process name to look for
       zwiftapp: 'ZwiftApp.exe',
-      // lookup: lookup table with version specific configuration
-      lookup: lookup,
       // timeout: interval between reading memory
       timeout: 100,
       // retry: keep retrying start() until success
@@ -49,6 +62,22 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // other supported options:
     // log: function for logging, e.g. console.log
     // playerid: use this playerid and do not attempt to detect it from log.txt
+    // type: the (master) lookup pattern to use
+    // lookup: array with lookup pattern objects (see lookup.js for format)
+    // offsets: specific 'offsets' definition to use when searching
+    // signature: specific 'signature' definition to use when searching
+    
+
+    // lookup: lookup table with version specific configuration
+    if (!this._options.lookup && this._options.type) {
+      this._options.lookup = lookupPatterns[this._options.type] || null
+    } 
+
+    if (!this._options.lookup && (!this._options.offsets || !this.options.signature)) {
+      this._options.lookup = Object.values(lookupPatterns)?.shift()
+      this._options.type = Object.keys(lookupPatterns)?.shift()
+    } 
+
 
     // log can be set to e.g. console.log in options
     this.log = this._options?.log || (() => { }) 
@@ -58,12 +87,45 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
 
+  /**
+   * @param {*} type 
+   */
+  loadType(type) {
+    if (!type) {
+      if (this._options.type) {
+        type = this._options.type
+      } else {
+        type = Object.keys(lookupPatterns)?.shift()
+      }
+    }
+
+    try {
+      this._options.lookup = lookupPatterns[type]
+      this.log('loaded pattern', type)
+      this.emit('status.loaded')
+    } catch (error) {
+      this.lasterror = 'error in loadPattern'
+      this.log(this.lasterror, error)
+      this.emit('status.error')
+    }
+  }
+
+  /**
+   * DEPRECATED - use loadURL instead
+   * @param {*} fetchLookupURL 
+   */
+  load(fetchLookupURL) {
+    this.loadURL(fetchLookupURL)
+  }
+
 
   /**
    * 
-   * @param {*} fetchLookupURL 
-   */  
-  load(fetchLookupURL) {
+   *
+   * @param {*} fetchLookupURL
+   * @memberof ZwiftMemoryMonitor
+   */
+  loadURL(fetchLookupURL) {
     // 
     if (!fetchLookupURL) {
       this.log('no fetchURL')
@@ -86,7 +148,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
 
   /**
-   * 
+   *
+   *
+   * @param {boolean} [forceScan=false]
+   * @memberof ZwiftMemoryMonitor
    */
   start(forceScan = false) {
     
@@ -111,15 +176,15 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // if signature or offsets are overridden in object initialisation they will be used
       // but otherwise _options.lookup will be searched for first entry matching the game version
       if (!this._options?.signature || !this._options?.offsets) {
-        let lookup = this?._options.lookup.find((entry) => {
+        let lookupFound = this?._options.lookup.find((entry) => {
           return semver.satisfies(this._zwiftversion, entry.versions)
         })
 
-        if (lookup && !this._options.signature) {
-          this._options.signature = lookup.signature
+        if (lookupFound && !this._options.signature) {
+          this._options.signature = lookupFound.signature
         }
-        if (lookup && !this._options.offsets) {
-          this._options.offsets = lookup.offsets
+        if (lookupFound && !this._options.offsets) {
+          this._options.offsets = lookupFound.offsets
         }
       }
 
@@ -131,11 +196,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
       if (this._options?.signature && this?._playerid > 0) {
         
-        let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-        // let pattern = `${lookup.signature?.start} ${('00000000' + this._playerid.toString(16)).substr(-8).match(/../g).reverse().join(' ')} ${lookup.signature?.end}`
+        let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
         this.log(pattern);
         let addressOffset = this._options.signature?.addressOffset || 0;
-        // let addressOffset = lookup.signature?.addressOffset || 0;
         
         let cachedScan = undefined;
 
@@ -168,7 +231,17 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
 
   /**
-   * 
+   * @param {*} error 
+   * @param {*} address 
+   */
+  /**
+   * Internal method. Used as callback to findPattern in .start
+   * Verifies the found address by reading player ID from memory.
+   * Emits status.started on success
+   * @param {*} error
+   * @param {*} address
+   * @fires status.started
+   * @memberof ZwiftMemoryMonitor
    */
   _checkBaseAddress(error, address) {
     this.log(error, address)
@@ -187,9 +260,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (value != this._playerid) {
         this._baseaddress = 0
         this.lasterror = 'Could not verify player ID in memory'
-        this._deleteCachedScan()
+        this._deleteCachedScanFile()
       } else {
-        this._saveCachedScan({
+        this._writeCachedScanFile({
           processObject: this._processObject,
           baseaddress: this._baseaddress
         })
@@ -198,7 +271,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
     if (this?._baseaddress) {
       Object.keys(this._options.offsets).forEach((key) => {
-        // this._addresses[key] = [ this._baseaddress - this._options.offsets?.player[0] + this._options.offsets[key][0],  this._options.offsets[key][1] ]
         this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
       })
       
@@ -215,7 +287,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
 
   /**
-   * 
+   *
+   *
+   * @fires status.stopped
+   * @fires status.retrying
+   * @memberof ZwiftMemoryMonitor
    */
   stop() {
     
@@ -245,7 +321,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
   
   /**
-   * 
+   *
+   * @fires playerState
+   * @fires status.stopping
+   * @memberof ZwiftMemoryMonitor
    */
   readPlayerState () {
     
@@ -283,9 +362,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
   }
 
+
   /**
-   * 
-   * @returns playerid: integer
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getPlayerid() {
     // Determine player ID from log.txt
@@ -308,9 +390,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
     } 
   }
 
+ 
   /**
-   * 
-   * @returns string
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getGameVersion() {
     // Determine game version from log.txt
@@ -333,27 +418,26 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
 
+
   /**
-   * 
-   * @returns object
+   * Get a cached scan object if it exists and matches the currently running Zwift process
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
    */
   _getCachedScan() {
     let cachedScan = undefined
 
-    if (fs.existsSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))) {
-      try {
-        cachedScan = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), 'utf8') || '{}')
-      } catch (e) {
-        cachedScan = null
-        this._deleteCachedScan()
-      }
+    cachedScan = this._readCachedScanFile()
 
+    if (cachedScan) {
+      // compare with the current Zwift process object:
       if ((this._processObject.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
         (this._processObject.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
         (this._processObject.szExeFile !== cachedScan?.processObject?.szExeFile)) {
         // Cached scan is not for the current process object so ignore and delete it
         cachedScan = null
-        this._deleteCachedScan()
+        this._deleteCachedScanFile()
       }
     }
 
@@ -361,25 +445,85 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
   /**
-     * 
-     */
-  _deleteCachedScan() {
+   * Delete cached scan file in temp folder
+   *
+   * @memberof ZwiftMemoryMonitor
+   */
+  _deleteCachedScanFile() {
     try {
-      fs.rmSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'))
+      fs.rmSync(this._getCachedScanFileName())
     } catch (e) {}
   }
 
+
   /**
-   * 
-   * @param {*} cachedScan 
+   * Write object to cached scan file in temp folder
+   *
+   * @param {*} cachedScan
+   * @memberof ZwiftMemoryMonitor
    */
-  _saveCachedScan(cachedScan) {
+  _writeCachedScanFile(cachedScan) {
     try {
-      fs.writeFileSync(path.join(os.tmpdir(), 'zwift-memory-monitor_cache'), JSON.stringify(cachedScan))
+      fs.writeFileSync(this._getCachedScanFileName(), JSON.stringify(cachedScan))
     } catch (e) {
       // delete cache in case of any error during write
-      this._deleteCachedScan()
+      this._deleteCachedScanFile()
     }
+  }
+  
+
+
+  /**
+   * Read cached scan file from temp folder and return the saved object if found.
+   * In case of errors, the cache file will be deleted.
+   *
+   * @return 
+   * @memberof ZwiftMemoryMonitor
+   */
+  _readCachedScanFile() {
+
+    let cachedScan = undefined
+
+    if (fs.existsSync(this._getCachedScanFileName())) {
+      try {
+        cachedScan = JSON.parse(fs.readFileSync(this._getCachedScanFileName(), 'utf8') || '{}')
+      } catch (e) {
+        cachedScan = null
+        // this._deleteCachedScanFile()
+        this._deleteCachedScanFile()
+      }
+
+    }
+    
+    return cachedScan
+  }
+  
+  /**
+   *
+   * @return 
+   * @memberof ZwiftMemoryMonitor
+   */
+  _getCachedScanFileName() {
+    
+    if (!this._cachedScanFileName) {
+      // console.log('must find cache filename')
+      const crypto = require('crypto');
+      // console.log('required crypto')
+      
+      // Creating Hash
+      const hash = crypto.createHash('sha256');
+      // console.log('has defined hash')
+      // Use the combination of lookup, offsets, and signature to obtain a hash value for the cache name
+      hash.update(JSON.stringify([this?._options?.lookup, this?._options?.offsets,this?._options?.signature]));
+      // console.log('has updated hash')
+      const suffix = hash.digest().toString('hex')
+      // console.log('got suffix',suffix)
+      
+      this._cachedScanFileName = path.join(os.tmpdir(), `zwift-memory-monitor_${suffix}`)
+      this.log('Cache file:',this._cachedScanFileName)
+    }
+
+    return this._cachedScanFileName
   }
   
 }

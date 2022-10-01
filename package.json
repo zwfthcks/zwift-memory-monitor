@@ -9,6 +9,7 @@
     "example-fetch": "node src/examples/example-fetch.js",
     "example-fetch-nourl": "node src/examples/example-fetch-nourl.js",
     "example-lookup": "node src/examples/version-lookup.js",
+    "example-profile": "node src/examples/profile-search.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-lookup": "node src/util/build-lookup.js"
   },
