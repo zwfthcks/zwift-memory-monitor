@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path')
 const os = require('os')
 
-const lookup = require('./lookup.js')
+const lookupPatterns = require('./lookup.js')
 
 
 /**
@@ -49,8 +49,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
       zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
       // zwiftapp: the process name to look for
       zwiftapp: 'ZwiftApp.exe',
-      // lookup: lookup table with version specific configuration
-      lookup: lookup,
       // timeout: interval between reading memory
       timeout: 100,
       // retry: keep retrying start() until success
@@ -64,6 +62,22 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // other supported options:
     // log: function for logging, e.g. console.log
     // playerid: use this playerid and do not attempt to detect it from log.txt
+    // type: the (master) lookup pattern to use
+    // lookup: array with lookup pattern objects (see lookup.js for format)
+    // offsets: specific 'offsets' definition to use when searching
+    // signature: specific 'signature' definition to use when searching
+    
+
+    // lookup: lookup table with version specific configuration
+    if (!this._options.lookup && this._options.type) {
+      this._options.lookup = lookupPatterns[this._options.type] || null
+    } 
+
+    if (!this._options.lookup && (!this._options.offsets || !this.options.signature)) {
+      this._options.lookup = Object.values(lookupPatterns)?.shift()
+      this._options.type = Object.keys(lookupPatterns)?.shift()
+    } 
+
 
     // log can be set to e.g. console.log in options
     this.log = this._options?.log || (() => { }) 
@@ -73,6 +87,37 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
 
+  /**
+   * @param {*} type 
+   */
+  loadPattern(type) {
+    if (!type) {
+      if (this._options.type) {
+        type = this._options.type
+      } else {
+        type = Object.keys(lookupPatterns)?.shift()
+      }
+    }
+
+    try {
+      this._options.lookup = lookupPatterns[type]
+      this.log('loaded pattern', type)
+      this.emit('status.loaded')
+    } catch (error) {
+      this.lasterror = 'error in loadPattern'
+      this.log(this.lasterror, error)
+      this.emit('status.error')
+    }
+  }
+
+  /**
+   * DEPRECATED - use loadURL instead
+   * @param {*} fetchLookupURL 
+   */
+  load(fetchLookupURL) {
+    this.loadURL(fetchLookupURL)
+  }
+
 
   /**
    * 
@@ -80,7 +125,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * @param {*} fetchLookupURL
    * @memberof ZwiftMemoryMonitor
    */
-  load(fetchLookupURL) {
+  loadURL(fetchLookupURL) {
     // 
     if (!fetchLookupURL) {
       this.log('no fetchURL')
@@ -131,15 +176,15 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // if signature or offsets are overridden in object initialisation they will be used
       // but otherwise _options.lookup will be searched for first entry matching the game version
       if (!this._options?.signature || !this._options?.offsets) {
-        let lookup = this?._options.lookup.find((entry) => {
+        let lookupFound = this?._options.lookup.find((entry) => {
           return semver.satisfies(this._zwiftversion, entry.versions)
         })
 
-        if (lookup && !this._options.signature) {
-          this._options.signature = lookup.signature
+        if (lookupFound && !this._options.signature) {
+          this._options.signature = lookupFound.signature
         }
-        if (lookup && !this._options.offsets) {
-          this._options.offsets = lookup.offsets
+        if (lookupFound && !this._options.offsets) {
+          this._options.offsets = lookupFound.offsets
         }
       }
 
@@ -466,9 +511,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // console.log('required crypto')
       
       // Creating Hash
-      const hash = crypto.createHash('sha256', JSON.stringify(this._options?.lookup));
+      const hash = crypto.createHash('sha256');
       // console.log('has defined hash')
-      hash.update(JSON.stringify(this?._options?.lookup) || []);
+      // Use the combination of lookup, offsets, and signature to obtain a hash value for the cache name
+      hash.update(JSON.stringify([this?._options?.lookup, this?._options?.offsets,this?._options?.signature]));
       // console.log('has updated hash')
       const suffix = hash.digest().toString('hex')
       // console.log('got suffix',suffix)
