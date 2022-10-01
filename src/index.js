@@ -385,6 +385,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       while ((match = patterns.user.exec(logtxt)) !== null) {
         let playerid = parseInt(match[1]);
         this.log(`Zwift seems to run with player ID: ${playerid} = ${('00000000' + playerid.toString(16)).substr(-8)}`)
+        this.emit('info', `playerid ${playerid}`)
         return playerid
       }
     } 
@@ -412,6 +413,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       while ((match = patterns.version.exec(logtxt)) !== null) {
         this.log(`Zwift seems to be version: ${match[1]}`)
+        this.emit('info', `version ${match[1]}`)
         return match[1];
       }
     } 
