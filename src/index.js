@@ -9,7 +9,8 @@ const EventEmitter = require('events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
 
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+// const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const fetch = require('node-fetch')
 
 const fs = require('fs');
 const path = require('path')
