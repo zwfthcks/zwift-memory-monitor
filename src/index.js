@@ -90,7 +90,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
   /**
    * @param {*} type 
    */
-  loadPattern(type) {
+  loadType(type) {
     if (!type) {
       if (this._options.type) {
         type = this._options.type
