@@ -9,7 +9,7 @@ const zmm = new ZwiftMemoryMonitor(
 )
 
 
-zmm.on('playerState', (playerState) => {
+zmm.on('data', (playerState) => {
     console.log(playerState)
 })
 

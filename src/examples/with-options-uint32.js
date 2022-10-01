@@ -19,9 +19,9 @@ const zmm = new ZwiftMemoryMonitor(
 )
 
 
-    zmm.on('playerState', (playerState) => {
+    zmm.on('data', (data) => {
         console.log( ansiEscapes.clearTerminal + ansiEscapes.cursorTo(0,0))
-        console.log(playerState)
+        console.log(data)
     })
 
 zmm.on('status.started', () => {
