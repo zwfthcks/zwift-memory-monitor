@@ -20,16 +20,16 @@ function asChild() {
     )
     
     // console.log('last error:', zmm.lasterror)
-    process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror })
+    if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
     
     zmm.on('data', (playerState) => {
         // console.log(playerState)
-        process.send({ type: 'playerstate', payload: playerState })
+        if (process.connected) process.send({ type: 'playerstate', payload: playerState });
     })
     
     zmm.on('status.started', () => {
         // console.log('status.started')
-        process.send({ type: 'status', payload: 'status.started' })
+        if (process.connected) process.send({ type: 'status', payload: 'status.started' });
         
         // stop after 20 seconds 
         setTimeout(() => {
@@ -40,24 +40,24 @@ function asChild() {
     
     zmm.on('status.stopped', () => {
         // console.log('status.stopped')
-        process.send({ type: 'status', payload: 'status.stopped' })
+        if (process.connected) process.send({ type: 'status', payload: 'status.stopped' });
     })
     
     zmm.on('status.stopping', () => {
         // console.log('status.stopping')
-        process.send({ type: 'status', payload: 'status.stopping' })
+        if (process.connected) process.send({ type: 'status', payload: 'status.stopping' });
     })
 
     try {
         zmm.start()
         
         // console.log('last error:', zmm.lasterror)
-        process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror })
+        if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
         
     } catch (e) {
         // console.log('error in zmm.start(): ', zmm.lasterror)
-        // process.send('error in zmm.start(): ' + zmm.lasterror)
-        process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror })
+        // if (process.connected) process.send('error in zmm.start(): ' + zmm.lasterror);
+        if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
     }
     
         
