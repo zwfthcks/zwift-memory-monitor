@@ -74,7 +74,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this._options.lookup = lookupPatterns[this._options.type] || null
     } 
 
-    if (!this._options.lookup && (!this._options.offsets || !this.options.signature)) {
+    if (!this._options.lookup && (!this._options.offsets || !this._options.signature)) {
       this._options.lookup = Object.values(lookupPatterns)?.shift()
       this._options.type = Object.keys(lookupPatterns)?.shift()
     } 
