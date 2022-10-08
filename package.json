@@ -26,6 +26,10 @@
     "url": "https://github.com/zwfthcks/zwift-memory-monitor/issues"
   },
   "homepage": "https://github.com/zwfthcks/zwift-memory-monitor#readme",
+  "engines": {
+    "npm": ">=8.3.0",
+    "node": ">=14.18.0"
+  },
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
     "node-fetch": "^2.6.7",

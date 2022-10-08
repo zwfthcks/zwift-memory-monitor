@@ -5,16 +5,16 @@
 
 
 
-const EventEmitter = require('events')
+const EventEmitter = require('node:events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
 
 // const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fetch = require('node-fetch')
 
-const fs = require('fs');
-const path = require('path')
-const os = require('os')
+const fs = require('node:fs');
+const path = require('node:path')
+const os = require('node:os')
 
 const lookupPatterns = require('./lookup.js')
 
