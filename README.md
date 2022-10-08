@@ -28,3 +28,9 @@ See also src/examples/example.js
 
 - ```cadence``` (rpm) is calculated from ````cadence_uHz```` (uHz)
 - ````calories```` (kCal) is calculated from ````work```` (mWh)
+
+
+
+## Supported
+
+- Node >=14.18.0 (but only tested w/Node >=16)
