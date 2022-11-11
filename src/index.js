@@ -378,7 +378,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
       let patterns = {
-        user :    /\[(?:[^\]]*)\]\s+NETCLIENT:\[INFO\] Player ID: (\d*)/g ,
+        user :    /\[(?:[^\]]*)\]\s+(?:NETCLIENT:){0,1}\[INFO\] Player ID: (\d*)/g ,
       }
       
       let match;
