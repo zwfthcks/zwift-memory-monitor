@@ -44,8 +44,12 @@ module.exports =
             offsets: {
                 weight: [4*4, 'uint32'], // g
                 ftp: [5*4, 'uint32'], // W
+                bodyType: [7*4, 'uint32'], // 
                 height: [42*4, 'uint32'], // mm
                 maxhr: [43*4, 'uint32'], // bpm
+                drops: [45*4, 'uint32'], // 
+                achievementLevel: [46*4, 'uint32'], // 
+                age: [51*4, 'uint32'], // 
             },
             signature: {
                 start: '00 00 00 00 00 00 00 00',

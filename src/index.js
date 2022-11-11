@@ -107,7 +107,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     } catch (error) {
       this.lasterror = 'error in loadPattern'
       this.log(this.lasterror, error)
-      this.emit('status.error')
+      this.emit('status.error', this.lasterror, error)
     }
   }
 
