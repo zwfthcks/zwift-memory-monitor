@@ -1,6 +1,8 @@
 # zwift-memory-monitor
 
-Works with Zwift version 1.29.1
+Works with Zwift version 1.29.1+
+
+Last tested with: Zwift version 1.31.1
 
 Windows only.
 
