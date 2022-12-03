@@ -305,7 +305,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
     
     try {
-      memoryjs.closeProcess(this?.processObject?.handle)
+      memoryjs.closeHandle(this?.processObject?.handle)
     } catch (e) {
       // 
     }
