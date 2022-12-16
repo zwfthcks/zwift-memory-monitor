@@ -42,11 +42,13 @@ zmm.on('status.stopping', () => {
     console.log('status.stopping')
 })
 
-try {
-    zmm.start()
-
-    console.log('last error:', zmm.lasterror)
-
-} catch (e) {
-    console.log('error in zmm.start(): ', zmm.lasterror)
-}
+zmm.once('ready', () => {
+    try {
+        zmm.start()
+    
+        console.log('last error:', zmm.lasterror)
+    
+    } catch (e) {
+        console.log('error in zmm.start(): ', zmm.lasterror)
+    }
+})

@@ -8,6 +8,7 @@
 const EventEmitter = require('node:events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
+const { getDocumentsPath } = require('platform-paths');
 
 // const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fetch = require('node-fetch')
@@ -17,6 +18,8 @@ const path = require('node:path')
 const os = require('node:os')
 
 const lookupPatterns = require('./lookup.js')
+
+// const documentsPath = getDocumentsPath()
 
 
 /**
@@ -37,6 +40,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
   constructor(options = {}) {
     super()
 
+    this._ready = false
+
     // bind this for functions
     this._checkBaseAddress = this._checkBaseAddress.bind(this)
     this._getCachedScan = this._getCachedScan.bind(this)
@@ -47,7 +52,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // initialise _options object with defaults and user set options
     this._options = {
       // zwiftlog: path to log.txt for Zwift
-      zwiftlog: path.resolve(os.homedir(), 'documents', 'Zwift', 'Logs', 'Log.txt'),
       // zwiftapp: the process name to look for
       zwiftapp: 'ZwiftApp.exe',
       // timeout: interval between reading memory
@@ -85,6 +89,20 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     // initial values
     this._started = false
+
+    // 
+    if (!options?.zwiftlog) {
+      getDocumentsPath().then((documentsPath) => {
+        // zwiftlog: path to log.txt for Zwift
+        this._options.zwiftlog = path.resolve(documentsPath, 'Zwift', 'Logs', 'Log.txt')
+        this._ready = true
+        this.emit('ready')
+      })
+    } else {
+      this._ready = true
+      this.emit('ready')
+    }
+
     
   }
 
@@ -92,6 +110,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * @param {*} type 
    */
   loadType(type) {
+
+    if (!this._ready) return false;
+
     if (!type) {
       if (this._options.type) {
         type = this._options.type
@@ -127,7 +148,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * @memberof ZwiftMemoryMonitor
    */
   loadURL(fetchLookupURL) {
-    // 
+
+    if (!this._ready) return false;
+
+    //
     if (!fetchLookupURL) {
       this.log('no fetchURL')
       this.emit('status.loaded')
@@ -156,6 +180,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   start(forceScan = false) {
     
+    if (!this._ready) return false;
+
     this._started = false
 
     this._retry = this._options?.retry || false
@@ -296,6 +322,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
    */
   stop() {
     
+    if (!this._ready) return false;
+
     this._started = false
 
     clearInterval(this._interval)

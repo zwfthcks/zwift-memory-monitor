@@ -38,11 +38,13 @@ zmm.on('status.retrying', (...args) => {
     // console.log('last error:', zmm.lasterror)
 })
 
-try {
-    zmm.start()
-
-    // console.log('last error:', zmm.lasterror)
-
-} catch (e) {
-    console.log('error in zmm.start(): ', zmm.lasterror)
-}
+zmm.once('ready', () => {
+    try {
+        zmm.start()
+    
+        // console.log('last error:', zmm.lasterror)
+    
+    } catch (e) {
+        console.log('error in zmm.start(): ', zmm.lasterror)
+    }
+})
