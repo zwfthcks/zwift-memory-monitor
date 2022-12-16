@@ -48,17 +48,19 @@ function asChild() {
         if (process.connected) process.send({ type: 'status', payload: 'status.stopping' });
     })
 
-    try {
-        zmm.start()
-        
-        // console.log('last error:', zmm.lasterror)
-        if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
-        
-    } catch (e) {
-        // console.log('error in zmm.start(): ', zmm.lasterror)
-        // if (process.connected) process.send('error in zmm.start(): ' + zmm.lasterror);
-        if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
-    }
+    zmm.once('ready', () => {
+        try {
+            zmm.start()
+            
+            // console.log('last error:', zmm.lasterror)
+            if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
+            
+        } catch (e) {
+            // console.log('error in zmm.start(): ', zmm.lasterror)
+            // if (process.connected) process.send('error in zmm.start(): ' + zmm.lasterror);
+            if (process.connected) process.send({ type: 'lasterror', payload: 'last error: ' + zmm.lasterror });
+        }
+    })
     
         
 }    

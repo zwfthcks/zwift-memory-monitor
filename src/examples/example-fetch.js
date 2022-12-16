@@ -42,5 +42,6 @@ zmm.on('status.loaded', () => {
     }
 })
 
-
-zmm.loadURL('https://zwfthcks.github.io/data/lookup-playerstate.json')
+zmm.once('ready', () => {
+    zmm.loadURL('https://zwfthcks.github.io/data/lookup-playerstate.json')
+})

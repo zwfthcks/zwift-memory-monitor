@@ -1,6 +1,6 @@
 {
   "name": "@zwfthcks/zwift-memory-monitor",
-  "version": "1.1.4",
+  "version": "2.0.0",
   "description": "monitor Zwift memory and emit events for player state updates",
   "main": "src/index.js",
   "scripts": {
@@ -33,6 +33,7 @@
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
     "node-fetch": "^2.6.7",
+    "platform-paths": "^1.2.2",
     "semver": "^7.3.8"
   },
   "devDependencies": {

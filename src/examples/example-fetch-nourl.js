@@ -42,5 +42,6 @@ zmm.on('status.loaded', () => {
     }
 })
 
-
-zmm.loadURL()
+zmm.once('ready', () => {
+    zmm.loadURL()
+})

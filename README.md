@@ -20,6 +20,10 @@ const ZwiftMemoryMonitor = require('@zwfthcks/zwift-memory-monitor');
 const zmm = new ZwiftMemoryMonitor();
 `````
 
+ZwiftMemoryMonitor is an EventEmitter.
+
+You have to listen for the 'ready' event and subsequently call the ```start``` method.
+
 See also src/examples/example.js
 
 
