@@ -11,7 +11,7 @@ const semver = require('semver')
 const { getDocumentsPath } = require('platform-paths');
 
 // const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const fetch = require('node-fetch')
+const fetch = require('node-fetch').default
 
 const fs = require('node:fs');
 const path = require('node:path')
