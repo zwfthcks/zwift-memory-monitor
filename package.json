@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "example": "node src/examples/example.js",
+    "example-force": "node src/examples/example-force.js",
     "example-retry": "node src/examples/retry-start.js",
     "example-fetch": "node src/examples/example-fetch.js",
     "example-fetch-nourl": "node src/examples/example-fetch-nourl.js",

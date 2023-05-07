@@ -2,7 +2,7 @@
 
 // Each entry is an array of lookup pattern objects
 // Each lookup pattern object must have three keys:
-// versions (semver string), offsets, signature
+// versions (semver string), offsets, signatures
 
 module.exports =
 {
@@ -22,19 +22,24 @@ module.exports =
                 heartrate: [0x50 - 0x20, 'uint32'],
                 power: [0x54 - 0x20, 'uint32'],
                 player: [0x20 - 0x20, 'uint32'],
-                x: [0x88 - 0x20, 'float'], // To be verified
-                y: [0xa0 - 0x20, 'float'], // To be verified
-                altitude: [0x8c - 0x20, 'float'], // To be verified
+                x: [0x88 - 0x20, 'float'], 
+                y: [0xa0 - 0x20, 'float'], 
+                altitude: [0x8c - 0x20, 'float'], 
                 watching: [0x90 - 0x20, 'uint32'],
                 world: [0x110 - 0x20, 'uint32'],
                 work: [ 0x84 - 0x20, 'uint32' ],  // unit mWh
             },
-            // signature: pattern to search for
-            signature: {
-                start: '6F 00 00 00 00 00 00 00 00 00 00 00',
-                end: '00 00 00 00',
-                addressOffset: 12
-            },
+            // signatures: patterns to search for
+            signatures: [
+                {
+                    pattern: 'EF 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00',
+                    addressOffset: 12 // baseaddress offset to start of found pattern
+                },
+                {
+                    pattern: '6F 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00',
+                    addressOffset: 12 // baseaddress offset to start of found pattern
+                },
+            ],
         },
         {
             // version: version numbers matching the pattern and positions
@@ -51,19 +56,21 @@ module.exports =
                 heartrate: [0x50 - 0x20, 'uint32'],
                 power: [0x54 - 0x20, 'uint32'],
                 player: [0x20 - 0x20, 'uint32'],
-                x: [0x88 - 0x20, 'float'], // To be verified
-                y: [0xa0 - 0x20, 'float'], // To be verified
-                altitude: [0x8c - 0x20, 'float'], // To be verified
+                x: [0x88 - 0x20, 'float'], 
+                y: [0xa0 - 0x20, 'float'], 
+                altitude: [0x8c - 0x20, 'float'], 
                 watching: [0x90 - 0x20, 'uint32'],
                 world: [0x110 - 0x20, 'uint32'],
                 work: [ 0x84 - 0x20, 'uint32' ],  // unit mWh
             },
-            // signature: pattern to search for
-            signature: {
-                start: '3B 00 00 00 00 00 00 00 00 00 00 00',
-                end: '00 00 00 00',
-                addressOffset: 12
-            },
+            // signatures: pattern to search for
+            signatures: [
+                {
+                    start: '3B 00 00 00 00 00 00 00 00 00 00 00',
+                    end: '00 00 00 00',
+                    addressOffset: 12
+                }
+            ],
         },
         {
             // version: version numbers matching the pattern and positions
@@ -80,19 +87,21 @@ module.exports =
                 heartrate: [0x50 - 0x20, 'uint32'],
                 power: [0x54 - 0x20, 'uint32'],
                 player: [0x20 - 0x20, 'uint32'],
-                x: [0x88 - 0x20, 'float'], // To be verified
-                y: [0xa0 - 0x20, 'float'], // To be verified
-                altitude: [0x8c - 0x20, 'float'], // To be verified
+                x: [0x88 - 0x20, 'float'], 
+                y: [0xa0 - 0x20, 'float'], 
+                altitude: [0x8c - 0x20, 'float'], 
                 watching: [0x90 - 0x20, 'uint32'],
                 world: [0x110 - 0x20, 'uint32'],
-                work: [ 0x84 - 0x20, 'uint32' ],  // unit mWh
+                work: [0x84 - 0x20, 'uint32'],  // unit mWh
             },
-            // signature: pattern to search for
-            signature: {
-                start: '1E 00 00 00 00 00 00 00 00 00 00 00',
-                end: '00 00 00 00',
-                addressOffset: 12
-            },
+            // signatures: pattern to search for
+            signatures: [
+                {
+                    start: '1E 00 00 00 00 00 00 00 00 00 00 00',
+                    end: '00 00 00 00',
+                    addressOffset: 12
+                }
+            ],
         }
     ],
     
@@ -109,13 +118,15 @@ module.exports =
                 achievementLevel: [46*4, 'uint32'], // 
                 age: [51*4, 'uint32'], // 
             },
-            signature: {
-                start: '00 00 00 00 00 00 00 00',
-                // end: '00 00 00 00 ? 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-                end: '00 00 00 00 00 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-                // end: '00 00 00 00 01 00 00 00 00 00 00 00',
-                addressOffset: 8
-            },
+            signatures: [
+                {
+                    start: '00 00 00 00 00 00 00 00',
+                    // end: '00 00 00 00 ? 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
+                    end: '00 00 00 00 00 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
+                    // end: '00 00 00 00 01 00 00 00 00 00 00 00',
+                    addressOffset: 8
+                }
+            ],
         },
         
     ]

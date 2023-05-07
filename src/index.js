@@ -78,7 +78,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this._options.lookup = lookupPatterns[this._options.type] || null
     } 
 
-    if (!this._options.lookup && (!this._options.offsets || !this._options.signature)) {
+    if (!this._options.lookup && (!this._options.offsets || !this._options.signatures)) {
       this._options.lookup = Object.values(lookupPatterns)?.shift()
       this._options.type = Object.keys(lookupPatterns)?.shift()
     } 
@@ -200,43 +200,67 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       this._zwiftversion = this._getGameVersion() || '0.0.0'
       
-      // if signature or offsets are overridden in object initialisation they will be used
+      // if provided an old version style signature instead of signatures (array), simply
+      // create the signatures array from it 
+      if (!this._options?.signatures && this._options?.signature) {
+        this._options.signatures = [ this._options.signature ]
+      }
+
+      // if signatures or offsets are overridden in object initialisation they will be used
       // but otherwise _options.lookup will be searched for first entry matching the game version
-      if (!this._options?.signature || !this._options?.offsets) {
+      if (!this._options?.signatures || !this._options?.offsets) {
         let lookupFound = this?._options.lookup.find((entry) => {
           return semver.satisfies(this._zwiftversion, entry.versions)
         })
 
-        if (lookupFound && !this._options.signature) {
-          this._options.signature = lookupFound.signature
+        if (lookupFound && lookupFound.signatures && !this._options.signatures) {
+          this._options.signatures = lookupFound.signatures
+        }
+        if (lookupFound && lookupFound.signature && !this._options.signatures) {
+          // if provided an old version style signature instead of signatures (array), simply
+          // create the signatures array from it 
+          this._options.signatures = [ lookupFound.signatures ]
         }
         if (lookupFound && !this._options.offsets) {
           this._options.offsets = lookupFound.offsets
         }
       }
 
-      if (this._options?.signature) {
+      if (this._options?.signatures) {
         this._playerid = this._options?.playerid || this._getPlayerid() || 0
       } else {
         this.lasterror = 'Missing signature for current game version'
       }
   
-      if (this._options?.signature && this?._playerid > 0) {
+      if (this._options?.signatures && this?._playerid > 0) {
         
-        let pattern = `${this._options?.signature?.start} ${('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')} ${this._options?.signature?.end}`
-        this.log(pattern);
-        let addressOffset = this._options.signature?.addressOffset || 0;
-        
+        let playeridPattern = ('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')
+
         let cachedScan = undefined;
 
         if (!forceScan) {
           cachedScan = this._getCachedScan()
         }
 
-        if (forceScan || !cachedScan?.baseaddress) {
-          memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
-        } else {
+        if (!forceScan && cachedScan?.baseaddress) {
           this._checkBaseAddress(null, cachedScan.baseaddress)
+        } else {
+          this._options.signatures.some((signature) => {
+            
+            if (!signature.pattern) {
+              // convert old style start+end signature to new style pattern
+              signature.pattern = `${signature?.start} <player> ${signature?.end}`
+            }
+            let pattern = signature.pattern.replace(/<player>/ig, playeridPattern)
+            this.log(pattern);
+
+            let addressOffset = signature?.addressOffset || 0;
+    
+            this.lasterror = null
+            memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
+            return this._started // will break iteration on first pattern found
+
+          })  
         }
 
         
@@ -309,6 +333,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this.emit('status.started')
       
     } 
+
+    return this._started
     
   }
 
