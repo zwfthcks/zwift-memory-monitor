@@ -32,11 +32,15 @@ module.exports =
             // signatures: patterns to search for
             signatures: [
                 {
-                    pattern: 'EF 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00',
+                    pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 in all cases (and hopefully next versions, too). No more than 1-2 sec. slower than next pattern.
+                    addressOffset: 8+18*4+8 // baseaddress offset to start of found pattern
+                },
+                {
+                    pattern: 'EF 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 when started riding
                     addressOffset: 12 // baseaddress offset to start of found pattern
                 },
                 {
-                    pattern: '6F 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00',
+                    pattern: '6F 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 while in initial screens
                     addressOffset: 12 // baseaddress offset to start of found pattern
                 },
             ],
