@@ -26,6 +26,17 @@ You have to listen for the 'ready' event and subsequently call the ```start``` m
 
 See also src/examples/example.js
 
+## Pattern / signature files
+
+To avoid having to update the dependency just because the pattern/signature changes, fetch the pattern at run-time from
+
+https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@latest/build/data/lookup-playerstate.json
+
+See src/examples/example-fetch.js
+
+### Deprecation
+
+Previously the example fetched patterns from https://zwfthcks.github.io/data/lookup-playerstate.json. This is now *deprecated* and the GitHub pages will eventually be removed. Please update your code to use the jsDelivr link instead.
 
 
 ## Miscellaneous
