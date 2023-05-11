@@ -43,5 +43,5 @@ zmm.on('status.loaded', () => {
 })
 
 zmm.once('ready', () => {
-    zmm.loadURL('https://zwfthcks.github.io/data/lookup-playerstate.json')
+    zmm.loadURL('https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@latest/build/data/lookup-playerstate.json')
 })
