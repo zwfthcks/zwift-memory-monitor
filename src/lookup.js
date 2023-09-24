@@ -26,7 +26,7 @@ module.exports =
                 y: [0xa0 - 0x20, 'float'], 
                 altitude: [0x8c - 0x20, 'float'], 
                 watching: [0x90 - 0x20, 'uint32'],
-                world: [0x120, 'uint32'],
+                world: [6 * 0x28 + 0x10, 'uint32'],
                 work: [ 0x84 - 0x20, 'uint32' ],  // unit mWh
             },
             // signatures: patterns to search for
