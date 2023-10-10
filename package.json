@@ -33,9 +33,9 @@
   },
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
-    "node-fetch": "^2.6.11",
+    "node-fetch": "^2.7.0",
     "platform-paths": "^1.2.2",
-    "semver": "^7.5.3"
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "ansi-escapes": "4.3.2"
