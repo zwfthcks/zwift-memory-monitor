@@ -7,10 +7,10 @@ const ansiEscapes = require('ansi-escapes');
 
 const lookupPatterns = require('../lookup.js')
 
-
+// grab the first defined offsets for playerstate
 var offsets = { ...lookupPatterns['playerstate'].shift().offsets }
 
-// generating the offsets to be read from memory
+// now add additional  offsets to be read from memory
 for (let i = 0x00; i < 0x130; i = i + 4) {
     offsets[ `_offset_0x${('000' + i.toString(16)).slice(-3)}`] = [ i , 'uint32']
 }
@@ -22,11 +22,11 @@ const zmm = new ZwiftMemoryMonitor(
     }
 )
 
-
-    zmm.on('data', (data) => {
-        console.log( ansiEscapes.clearTerminal + ansiEscapes.cursorTo(0,0))
-        console.log(Object.entries(data).sort())
-    })
+zmm.on('data', (data) => {
+    console.log( ansiEscapes.clearTerminal + ansiEscapes.cursorTo(0,0))
+    // output the data but sorted
+    console.log(Object.entries(data).sort())
+})
 
 zmm.on('status.started', () => {
     console.log('status.started')
