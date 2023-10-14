@@ -34,7 +34,7 @@ zmm.on('status.started', () => {
     // stop after 20 seconds 
     setTimeout(() => {
         zmm.stop()    
-    }, 200000);
+    }, 20_000);
 
 })
 
