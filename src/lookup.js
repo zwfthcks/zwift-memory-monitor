@@ -13,21 +13,20 @@ module.exports =
             // offsets: field configuration
             offsets: {
                 // Relative position to player (the baseaddress)
-                // Here calculated as the field specific offset used in MOV minus 0x20 (offset for player in MOV)
-                climbing: [0x60 - 0x20, 'uint32'],
-                speed: [0x3c - 0x20, 'uint32'],
-                distance: [0x30 - 0x20, 'uint32'],
-                time: [0x64 - 0x20, 'uint32'],
-                cadence_uHz: [0x48 - 0x20, 'uint32'], // unit uHz
-                heartrate: [0x50 - 0x20, 'uint32'],
-                power: [0x54 - 0x20, 'uint32'],
-                player: [0x20 - 0x20, 'uint32'],
-                x: [0x88 - 0x20, 'float'], 
-                y: [0xa0 - 0x20, 'float'], 
-                altitude: [0x8c - 0x20, 'float'], 
-                watching: [0x90 - 0x20, 'uint32'],
-                world: [6 * 0x28 + 6 * 0x4, 'uint32'],
-                work: [ 0x84 - 0x20, 'uint32' ],  // unit mWh
+                climbing: [0x40, 'uint32'],
+                speed: [0x1c, 'uint32'],
+                distance: [0x10, 'uint32'],
+                time: [0x44, 'uint32'],
+                cadence_uHz: [0x28, 'uint32'], // unit uHz
+                heartrate: [0x30, 'uint32'],
+                power: [0x34, 'uint32'],
+                player: [0x0, 'uint32'],
+                x: [0x68, 'float'], 
+                y: [0x80, 'float'], 
+                altitude: [0x6c, 'float'], 
+                watching: [0x70, 'uint32'],
+                world: [0x108, 'uint32'],
+                work: [ 0x64, 'uint32' ],  // unit mWh
             },
             // signatures: patterns to search for
             signatures: [
