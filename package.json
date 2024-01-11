@@ -29,11 +29,10 @@
   "homepage": "https://github.com/zwfthcks/zwift-memory-monitor#readme",
   "engines": {
     "npm": ">=8.3.0",
-    "node": ">=14.18.0"
+    "node": ">=18"
   },
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
-    "node-fetch": "^2.7.0",
     "platform-paths": "^1.2.2",
     "semver": "^7.5.4"
   },

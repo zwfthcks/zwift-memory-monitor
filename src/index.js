@@ -10,9 +10,6 @@ const memoryjs = require('memoryjs');
 const semver = require('semver')
 const { getDocumentsPath } = require('platform-paths');
 
-// const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const fetch = require('node-fetch').default
-
 const fs = require('node:fs');
 const path = require('node:path')
 const os = require('node:os')
@@ -145,9 +142,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * 
    *
    * @param {*} fetchLookupURL
+   * @param {*} options 
    * @memberof ZwiftMemoryMonitor
    */
-  loadURL(fetchLookupURL) {
+  loadURL(fetchLookupURL, options = {}) {
 
     if (!this._ready) return false;
 
@@ -157,7 +155,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this.emit('status.loaded')
       
     } else {
-      fetch(fetchLookupURL)
+      fetch(fetchLookupURL, options)
       .then((response) => {
         return response.json();
       })
