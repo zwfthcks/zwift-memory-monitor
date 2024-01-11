@@ -2,7 +2,7 @@
 
 Works with Zwift version 1.29.1+
 
-Last tested with: Zwift version 1.50.0
+Last tested with: Zwift version 1.56.0
 
 Windows only [^1].
 
@@ -50,7 +50,7 @@ Previously the example fetched patterns from https://zwfthcks.github.io/data/loo
 
 ## Supported
 
-- Node >=14.18.0 (but only tested w/Node >=16)
+- Node >=18
 
 
 ## Notes
