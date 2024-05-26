@@ -34,12 +34,11 @@ module.exports =
                     pattern: [
                         '<player>',
                         Array(1).fill('00 00 00 00').join(' '),
-                        Array(22).fill('? ? ? ?').join(' '),
-                        Array(6).fill('00 00 00 00').join(' '),
+                        Array(28).fill('? ? ? ?').join(' '),
                         '<player>',
                         Array(1).fill('00 00 00 00').join(' ')
                     ].join(' '), // matches 1.65 in initial testing.
-                    addressOffset: (1+1+22+6)*4 // baseaddress offset to start of found pattern
+                    addressOffset: (1+1+28)*4 // baseaddress offset to start of found pattern
                 },
                 {
                     pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.56 in initial testing.
