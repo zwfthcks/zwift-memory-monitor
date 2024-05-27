@@ -368,11 +368,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
     let overlap = hexPattern.length / 2;
 
     let foundAddresses = [];
-    let foundRegions = [];
     
     let regionBuffer;
     
-    regions.forEach( (region) => {
+    regions.forEach((region) => {
       if (region.szExeFile) return; // skip this region if szExeFile is set
     
       let baseAddress = region.BaseAddress
@@ -401,7 +400,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
             let readBack = memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex')
             if (readBack == hexPattern) {
               foundAddresses.push((baseAddress + patternIndex).toString(16).toUpperCase())
-              foundRegions.push(region)
             }
     
             // this.log('reading back:',memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex'))
@@ -410,32 +408,34 @@ class ZwiftMemoryMonitor extends EventEmitter {
           }
         } while (patternIndex >= 0)
     
-          baseAddress += chunkSize - overlap
+        baseAddress += chunkSize - overlap
       }
     
     
     })
     
-    
+    // filter out duplicates and verify that the pattern still is at the found address
+    foundAddresses = [...new Set(foundAddresses)].filter((address) => {
+      return hexPattern == memoryjs.readBuffer(processObject.handle, parseInt(address, 16), hexPattern.length / 2).toString('hex')
+    })
     
     // this.log('FOUND ADDRESSES:')
-    // this.log(new Set(foundAddresses))
-    // this.log('FOUND REGIONS:') 
-    // this.log(foundRegions)
-    
-    
+    // this.log(foundAddresses)
+
     // loop through foundAddresses and calculate the offset between two adjacent elements
     let offsets = [];
     let lastAddress = 0;
-    foundAddresses.forEach( (address) => {
+    foundAddresses.forEach((address) => {
+      
       let thisAddress = parseInt(address, 16);
       if (lastAddress) {
         offsets.push({
           address: address,
           offset: thisAddress - lastAddress
-      })
+        })
       }
       lastAddress = thisAddress;
+
     })
     
     // this.log('OFFSETS:')
