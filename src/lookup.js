@@ -6,6 +6,42 @@
 
 module.exports =
 {
+    playerstateHeuristic: [
+        {
+            // version: version numbers matching the pattern and positions
+            versions: ">=1.65.0",
+            // offsets: field configuration
+            offsets: {
+                // Relative position to player (the baseaddress)
+                climbing: [0x40, 'uint32'], // 0x10 or 0x118
+                speed: [0x1c, 'uint32'],
+                distance: [0x10, 'uint32'],
+                time: [0x44, 'uint32'],
+                cadence_uHz: [0x28, 'uint32'], // unit uHz
+                heartrate: [0x30, 'uint32'],
+                power: [0x34, 'uint32'],
+                player: [0x0, 'uint32'],
+                x: [0x68, 'float'], 
+                y: [0x80, 'float'], 
+                altitude: [0x6c, 'float'], 
+                watching: [0x70, 'uint32'],
+                world: [0x108, 'uint32'],
+                work: [ 0x64, 'uint32' ],  // unit mWh
+            },
+            // signatures: patterns to search for
+            signatures: [
+                {
+                    pattern: '<player> 00 00 00 00',
+                    heuristic: {
+                        min: 8 + 16 * 4,
+                        max: 8 + 32 * 4,
+                    },
+                    addressOffset: 0 // baseaddress offset to start of found pattern (the first occurence of pattern where was another occurrence between min and max before it)
+                },
+            ],
+        },
+    ],
+    
     playerstate: [
         {
             // version: version numbers matching the pattern and positions
@@ -40,30 +76,30 @@ module.exports =
                     ].join(' '), // matches 1.65 in initial testing.
                     addressOffset: (1+1+28)*4 // baseaddress offset to start of found pattern
                 },
-                {
-                    pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.56 in initial testing.
-                    addressOffset: 8+16*4+4*4+8 // baseaddress offset to start of found pattern
-                },
-                {
-                    pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // fallback patterne for 1.56 should the extra segment before the last <player> not be all 0 anyway.
-                    addressOffset: 8+16*4+4*4+8 // baseaddress offset to start of found pattern
-                },
-                {
-                    pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 in all cases (and hopefully next versions, too). No more than 1-2 sec. slower than next pattern.
-                    addressOffset: 8+16*4+8 // baseaddress offset to start of found pattern
-                },
-                {
-                    pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 in all cases (and hopefully next versions, too). No more than 1-2 sec. slower than next pattern.
-                    addressOffset: 8+18*4+8 // baseaddress offset to start of found pattern
-                },
-                {
-                    pattern: 'EF 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 when started riding
-                    addressOffset: 12 // baseaddress offset to start of found pattern
-                },
-                {
-                    pattern: '6F 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 while in initial screens
-                    addressOffset: 12 // baseaddress offset to start of found pattern
-                },
+                // {
+                //     pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.56 in initial testing.
+                //     addressOffset: 8+16*4+4*4+8 // baseaddress offset to start of found pattern
+                // },
+                // {
+                //     pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // fallback patterne for 1.56 should the extra segment before the last <player> not be all 0 anyway.
+                //     addressOffset: 8+16*4+4*4+8 // baseaddress offset to start of found pattern
+                // },
+                // {
+                //     pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 in all cases (and hopefully next versions, too). No more than 1-2 sec. slower than next pattern.
+                //     addressOffset: 8+16*4+8 // baseaddress offset to start of found pattern
+                // },
+                // {
+                //     pattern: '<player> 00 00 00 00 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 in all cases (and hopefully next versions, too). No more than 1-2 sec. slower than next pattern.
+                //     addressOffset: 8+18*4+8 // baseaddress offset to start of found pattern
+                // },
+                // {
+                //     pattern: 'EF 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 when started riding
+                //     addressOffset: 12 // baseaddress offset to start of found pattern
+                // },
+                // {
+                //     pattern: '6F 00 00 00 00 00 00 00 00 00 00 00 <player> 00 00 00 00', // matches 1.39 while in initial screens
+                //     addressOffset: 12 // baseaddress offset to start of found pattern
+                // },
             ],
         },
         {
