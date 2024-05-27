@@ -44,6 +44,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this._getCachedScan = this._getCachedScan.bind(this)
     this._writeCachedScanFile = this._writeCachedScanFile.bind(this)
     this._readCachedScanFile = this._readCachedScanFile.bind(this)
+    this._searchWithHeuristicSignature = this._searchWithHeuristicSignature.bind(this)
     this.readPlayerData = this.readPlayerData.bind(this)
 
     // initialise _options object with defaults and user set options
@@ -79,7 +80,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this._options.lookup = Object.values(lookupPatterns)?.shift()
       this._options.type = Object.keys(lookupPatterns)?.shift()
     } 
-
 
     // log can be set to e.g. console.log in options
     this.log = this._options?.log || (() => { }) 
@@ -255,7 +255,17 @@ class ZwiftMemoryMonitor extends EventEmitter {
             let addressOffset = signature?.addressOffset || 0;
     
             this.lasterror = null
-            memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
+
+            if (signature.heuristic) {
+              // heuristic signature
+              let heuristic = {
+                min: signature.heuristic.min ?? 8 + 16 * 4,
+                max: signature.heuristic.max ?? 8 + 32 * 4
+              }
+              this._searchWithHeuristicSignature(this._processObject, pattern, heuristic, addressOffset, this._checkBaseAddress)
+            } else {
+              memoryjs.findPattern(this._processObject.handle, pattern, memoryjs.NORMAL, addressOffset, this._checkBaseAddress);
+            }
             return this._started // will break iteration on first pattern found
 
           })  
@@ -336,6 +346,118 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
   }
 
+
+  /**
+   * Searches for a pattern in memory regions of a process using a heuristic signature.
+   *
+   * @param {object} processObject - The process object containing the handle of the target process.
+   * @param {string} pattern - The pattern to search for in memory regions.
+   * @param {object} heuristic - The heuristic object containing the minimum and maximum offset values.
+   * @param {number} addressOffset - The offset to be added to the found address.
+   * @param {function} callback - The callback function to be called with the found address.
+   * @returns {void}
+   */
+  _searchWithHeuristicSignature(processObject, pattern, heuristic, addressOffset, callback) {
+    // 
+
+    let regions = memoryjs.getRegions(processObject.handle);
+    
+    let hexPattern = pattern.split(' ').join('')
+    
+    let chunkSize = 1024 * 1024 * 2;
+    let overlap = hexPattern.length / 2;
+
+    let foundAddresses = [];
+    let foundRegions = [];
+    
+    let regionBuffer;
+    
+    regions.forEach( (region) => {
+      if (region.szExeFile) return; // skip this region if szExeFile is set
+    
+      let baseAddress = region.BaseAddress
+    
+      while (baseAddress < region.BaseAddress + region.RegionSize) {
+        regionBuffer = memoryjs.readBuffer(processObject.handle, baseAddress, Math.min(chunkSize, region.BaseAddress + region.RegionSize - baseAddress));
+        // this.log(regionBuffer.toString('hex'))
+        // this.log(regionBuffer)
+        
+        let patternIndex;
+        let byteOffset = 0;
+        
+        do {
+          patternIndex = regionBuffer.indexOf(hexPattern, byteOffset, 'hex');  // the first occurrence of the pattern (if any)
+          
+          if (patternIndex >= 0) {
+            // this.log('FOUND PATTERN AT', patternIndex, 'in region', region.BaseAddress, 'from chunk at', baseAddress.toString(16).toUpperCase())
+            // this.log(regionBuffer)
+            // this.log('at patternIndex', patternIndex)
+            // this.log(regionBuffer.slice(patternIndex, patternIndex + (hexPattern.length / 2)).toString('hex'))
+            // this.log(regionBuffer.slice(patternIndex, patternIndex + (hexPattern.length / 2)).toString('utf8'))
+            
+            // this.log('at address:', baseAddress + patternIndex, (baseAddress + patternIndex).toString(16).toUpperCase())
+    
+            
+            let readBack = memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex')
+            if (readBack == hexPattern) {
+              foundAddresses.push((baseAddress + patternIndex).toString(16).toUpperCase())
+              foundRegions.push(region)
+            }
+    
+            // this.log('reading back:',memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex'))
+            
+            byteOffset = patternIndex + (hexPattern.length / 2) + 1
+          }
+        } while (patternIndex >= 0)
+    
+          baseAddress += chunkSize - overlap
+      }
+    
+    
+    })
+    
+    
+    
+    // this.log('FOUND ADDRESSES:')
+    // this.log(new Set(foundAddresses))
+    // this.log('FOUND REGIONS:') 
+    // this.log(foundRegions)
+    
+    
+    // loop through foundAddresses and calculate the offset between two adjacent elements
+    let offsets = [];
+    let lastAddress = 0;
+    foundAddresses.forEach( (address) => {
+      let thisAddress = parseInt(address, 16);
+      if (lastAddress) {
+        offsets.push({
+          address: address,
+          offset: thisAddress - lastAddress
+      })
+      }
+      lastAddress = thisAddress;
+    })
+    
+    // this.log('OFFSETS:')
+    // this.log(offsets)
+    
+    // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
+    let wantedAddress = 0;
+    offsets.some( (offset) => {
+      if ((offset.offset >= (heuristic.min ?? 0)) && (offset.offset <= (heuristic.max ?? 0) && offset.offset % 4 == 0)) {
+        wantedAddress = parseInt(offset.address, 16);
+        return true;
+      }
+    })
+    
+    this.log('WANTED ADDRESS:')
+    this.log(wantedAddress.toString(16).toUpperCase())
+  
+    if (wantedAddress) {
+      callback(null, wantedAddress + addressOffset)
+    }
+
+  }
 
   /**
    *
