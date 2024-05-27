@@ -2,7 +2,7 @@
 
 Works with Zwift version 1.29.1+
 
-Last tested with: Zwift version 1.56.0
+Last tested with: Zwift version 1.65.0
 
 Windows only [^1].
 
@@ -30,7 +30,7 @@ See also src/examples/example.js
 
 To avoid having to update the dependency just because the pattern/signature changes, fetch the pattern at run-time from
 
-https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/lookup-playerstate.json
+https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/lookup-playerstateHeuristic.json
 
 See src/examples/example-fetch.js
 
