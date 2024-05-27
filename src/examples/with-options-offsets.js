@@ -8,7 +8,7 @@ const ansiEscapes = require('ansi-escapes');
 const lookupPatterns = require('../lookup.js')
 
 // grab the first defined offsets for playerstate
-var offsets = { ...lookupPatterns['playerstate'].shift().offsets }
+var offsets = { ...lookupPatterns['playerstateHeuristic'].shift().offsets }
 
 // now add additional  offsets to be read from memory
 for (let i = 0x00; i < 0x130; i = i + 4) {
