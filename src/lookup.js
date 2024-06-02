@@ -33,8 +33,8 @@ module.exports =
                 {
                     pattern: '<player> 00 00 00 00',
                     heuristic: {
-                        min: 8 + 16 * 4,
-                        max: 8 + 32 * 4,
+                        min: 8 + 20 * 4,
+                        max: 8 + 36 * 4,
                     },
                     addressOffset: 0 // baseaddress offset to start of found pattern (the first occurence of pattern where was another occurrence between min and max before it)
                 },
