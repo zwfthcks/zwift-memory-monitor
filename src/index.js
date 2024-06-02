@@ -333,7 +333,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
         this._addresses[key] = [ this._baseaddress + this._options.offsets[key][0],  this._options.offsets[key][1] ]
       })
       
-      this.log(this._addresses)
+      // this.log(this._addresses)
       
       this._interval = setInterval(this.readPlayerData, this._options.timeout)
       this._started = true
@@ -443,15 +443,17 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
     // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
     let wantedAddress = 0;
+    let wantedOffset;;
     offsets.some( (offset) => {
       if ((offset.offset >= (heuristic.min ?? 0)) && (offset.offset <= (heuristic.max ?? 0) && offset.offset % 4 == 0)) {
         wantedAddress = parseInt(offset.address, 16);
+        wantedOffset = offset.offset;
         return true;
       }
     })
     
-    this.log('WANTED ADDRESS:')
-    this.log(wantedAddress.toString(16).toUpperCase())
+    this.log('WANTED ADDRESS and OFFSET:')
+    this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset-8)/4}*4 )` : '')
   
     if (wantedAddress) {
       callback(null, wantedAddress + addressOffset)
