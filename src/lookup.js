@@ -14,12 +14,12 @@ module.exports =
             offsets: {
                 // Relative position to player (the baseaddress)
                 climbing: [0x40, 'uint32'], // 0x10 or 0x118
-                speed: [0x1c, 'uint32'],
-                distance: [0x10, 'uint32'],
-                time: [0x44, 'uint32'],
+                speed: [0x1c, 'uint32'], // unit mm/h
+                distance: [0x10, 'uint32'], // unit m
+                time: [0x44, 'uint32'], // unit s
                 cadence_uHz: [0x28, 'uint32'], // unit uHz
-                heartrate: [0x30, 'uint32'],
-                power: [0x34, 'uint32'],
+                heartrate: [0x30, 'uint32'], // unit bpm
+                power: [0x34, 'uint32'], // unit W
                 player: [0x0, 'uint32'],
                 x: [0x68, 'float'], 
                 y: [0x80, 'float'], 
