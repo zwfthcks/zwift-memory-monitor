@@ -260,7 +260,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
               // heuristic signature
               let heuristic = {
                 min: signature.heuristic.min ?? 8 + 16 * 4,
-                max: signature.heuristic.max ?? 8 + 32 * 4
+                max: signature.heuristic.max ?? 8 + 32 * 4,
+                mustMatch: signature.heuristic.mustMatch ?? [ ],
+                mustDiffer: signature.heuristic.mustDiffer ?? [ ],
+                mustBeGreaterThanEqual: signature.heuristic.mustBeGreaterThanEqual ?? null,
+                mustBeLessThanEqual: signature.heuristic.mustBeLessThanEqual ?? null,
               }
               this._searchWithHeuristicSignature(this._processObject, pattern, heuristic, addressOffset, this._checkBaseAddress)
             } else {
@@ -358,7 +362,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * @returns {void}
    */
   _searchWithHeuristicSignature(processObject, pattern, heuristic, addressOffset, callback) {
-    // 
+    //
+
+    this.log('searchWithHeuristicSignature', pattern, heuristic, addressOffset)
 
     let regions = memoryjs.getRegions(processObject.handle);
     
@@ -419,8 +425,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
       return hexPattern == memoryjs.readBuffer(processObject.handle, parseInt(address, 16), hexPattern.length / 2).toString('hex')
     })
     
-    // this.log('FOUND ADDRESSES:')
-    // this.log(foundAddresses)
+    this.log('FOUND ADDRESSES:')
+    this.log(foundAddresses)
 
     // loop through foundAddresses and calculate the offset between two adjacent elements
     let offsets = [];
@@ -438,14 +444,108 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     })
     
-    // this.log('OFFSETS:')
-    // this.log(offsets)
+    this.log('OFFSETS:')
+    this.log(offsets)
     
     // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
     let wantedAddress = 0;
     let wantedOffset;;
     offsets.some( (offset) => {
       if ((offset.offset >= (heuristic.min ?? 0)) && (offset.offset <= (heuristic.max ?? 0) && offset.offset % 4 == 0)) {
+
+        this.log('CHECKING this address:', offset.address)
+
+        if (heuristic.mustMatch.length > 0) {
+
+          let match = heuristic.mustMatch.every((mustMatchEntry) => {
+            // this.log('mustMatchEntry', mustMatchEntry)
+            // this.log('1:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) - offset.offset + mustMatchEntry, memoryjs.UINT32))
+            // this.log('2:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + mustMatchEntry, memoryjs.UINT32))
+
+            return memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) - offset.offset + mustMatchEntry, memoryjs.UINT32) ==
+              memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + mustMatchEntry, memoryjs.UINT32)
+          })
+          this.log('match = ', match)
+          if (!match) {
+            this.log('Not the wanted address:', offset.address)
+            return false;
+          }
+
+        }
+
+        if (heuristic.mustDiffer.length > 0) {
+
+          let differ = heuristic.mustDiffer.every((mustDifferEntry) => {
+            // this.log('mustDifferEntry', mustDifferEntry)
+            // this.log('1:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) - offset.offset + mustDifferEntry, memoryjs.UINT32))
+            // this.log('2:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + mustDifferEntry, memoryjs.UINT32))
+            // this.log('verify 1 base:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) - offset.offset, memoryjs.UINT32))
+            // this.log('verify 2 base:', memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16), memoryjs.UINT32))
+
+            return memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) - offset.offset + mustDifferEntry, memoryjs.UINT32) !=
+              memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + mustDifferEntry, memoryjs.UINT32)
+          })
+          this.log('differ = ', differ)
+          if (!differ) {
+            this.log('Not the wanted address:', offset.address)
+            return false;
+          }
+        
+        }
+
+        if (heuristic.mustBeGreaterThanEqual) {
+
+          // mustBeGreaterThanEqual: {
+          //   power: [0x34, 'uint32', 0],
+          //   heartrate: [0x30, 'uint32', 0]
+          // },
+          
+          // loop over the mustBeGreaterThanEqual object and check that the value at the address is greater than or equal to the value
+          let greaterThanEqual = Object.keys(heuristic.mustBeGreaterThanEqual).every((key) => {
+            let value = heuristic.mustBeGreaterThanEqual[key][2];
+            let type = heuristic.mustBeGreaterThanEqual[key][1];
+            let offsetToRead = heuristic.mustBeGreaterThanEqual[key][0];
+
+            let readValue = memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + offsetToRead, type);
+            // this.log('readValue', readValue);
+            // this.log('value', value);
+            return readValue >= value;
+          });
+          this.log('greaterThanEqual = ', greaterThanEqual);
+          if (!greaterThanEqual) {
+            this.log('Not the wanted address:', offset.address);
+            return false;
+          }
+        }
+
+        if (heuristic.mustBeLessThanEqual) {
+
+          // mustBeLessThanEqual: {
+          //   power: [0x34, 'uint32', 0],
+          //   heartrate: [0x30, 'uint32', 0]
+          // },
+          
+          // loop over the mustBeLessThanEqual object and check that the value at the address is greater than or equal to the value
+          let lessThanEqual = Object.keys(heuristic.mustBeLessThanEqual).every((key) => {
+            let value = heuristic.mustBeLessThanEqual[key][2];
+            let type = heuristic.mustBeLessThanEqual[key][1];
+            let offsetToRead = heuristic.mustBeLessThanEqual[key][0];
+
+            let readValue = memoryjs.readMemory(processObject.handle, parseInt(offset.address, 16) + offsetToRead, type);
+            // this.log('readValue', readValue);
+            // this.log('value', value);
+            return readValue <= value;
+          });
+          this.log('lessThanEqual = ', lessThanEqual);
+          if (!lessThanEqual) {
+            this.log('Not the wanted address:', offset.address);
+            return false;
+          }
+        }
+
+  
+        this.log('ALL CHECKS TRUE for', offset.address)
+
         wantedAddress = parseInt(offset.address, 16);
         wantedOffset = offset.offset;
         return true;
