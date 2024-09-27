@@ -35,6 +35,17 @@ module.exports =
                     heuristic: {
                         min: 8 + 20 * 4,
                         max: 8 + 36 * 4,
+                        mustMatch: [],
+                        mustDiffer: [8],
+                        mustBeGreaterThanEqual: {
+                            power: [0x34, 'uint32', 0], // offset, type, value
+                            heartrate: [0x30, 'uint32', 0], // offset, type, value
+                        },
+                        mustBeLessThanEqual: {
+                            power: [0x34, 'uint32', 2000], // offset, type, value
+                            heartrate: [0x30, 'uint32', 300], // offset, type, value
+                        },
+                        
                     },
                     addressOffset: 0 // baseaddress offset to start of found pattern (the first occurence of pattern where was another occurrence between min and max before it)
                 },
