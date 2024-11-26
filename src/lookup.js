@@ -25,6 +25,8 @@ module.exports =
                 y: [0x80, 'float'], 
                 altitude: [0x6c, 'float'], 
                 watching: [0x70, 'uint32'],
+                groupId: [0x78, 'uint32'],
+                routeId: [0xa4, 'uint32'],
                 world: [0x108, 'uint32'],
                 work: [ 0x64, 'uint32' ],  // unit mWh
             },
@@ -72,6 +74,8 @@ module.exports =
                 y: [0x80, 'float'], 
                 altitude: [0x6c, 'float'], 
                 watching: [0x70, 'uint32'],
+                groupId: [0x78, 'uint32'],
+                routeId: [0xa4, 'uint32'],
                 world: [0x108, 'uint32'],
                 work: [ 0x64, 'uint32' ],  // unit mWh
             },
