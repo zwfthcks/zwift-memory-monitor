@@ -13,10 +13,11 @@ module.exports =
             // offsets: field configuration
             offsets: {
                 // Relative position to player (the baseaddress)
+                timestamp: [0x8, 'uint32'], // ms (world time?)
                 climbing: [0x40, 'uint32'], // 0x10 or 0x118
                 speed: [0x1c, 'uint32'], // unit mm/h
                 distance: [0x10, 'uint32'], // unit m
-                time: [0x44, 'uint32'], // unit s
+                time: [0x44, 'uint32'], // unit s // time on course (excluding lead-in and pedal assist)
                 cadence_uHz: [0x28, 'uint32'], // unit uHz
                 heartrate: [0x30, 'uint32'], // unit bpm
                 power: [0x34, 'uint32'], // unit W
