@@ -13,7 +13,7 @@ module.exports =
             // offsets: field configuration
             offsets: {
                 // Relative position to player (the baseaddress)
-                timestamp: [0x8, 'uint32'], // μs (microseconds) (world time?)
+                timestamp: [0x8, 'uint32'], // unit ms 
                 climbing: [0x40, 'uint32'], // 0x10 or 0x118
                 speed: [0x1c, 'uint32'], // unit mm/h
                 distance: [0x10, 'uint32'], // unit m
