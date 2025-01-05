@@ -621,6 +621,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
           playerData.calories = Math.round(playerData?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
         }
 
+        if (playerData?.roadtime >= 0) {
+          playerData.roadtime = (playerData?.roadtime - 5_000) / 1_000_000
+        }
+
         // verify by reading player id back from memory
         if (this._playerid != memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)) {
           // Probably because Zwift was closed...
