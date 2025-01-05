@@ -13,7 +13,7 @@ module.exports =
             // offsets: field configuration
             offsets: {
                 // Relative position to player (the baseaddress)
-                timestamp: [0x8, 'uint32'], // μs (microseconds) (world time?)
+                timestamp: [0x8, 'uint32'], // unit ms 
                 climbing: [0x40, 'uint32'], // 0x10 or 0x118
                 speed: [0x1c, 'uint32'], // unit mm/h
                 distance: [0x10, 'uint32'], // unit m
@@ -29,7 +29,8 @@ module.exports =
                 groupId: [0x78, 'uint32'],
                 routeId: [0xa4, 'uint32'],
                 world: [0x108, 'uint32'],
-                work: [ 0x64, 'uint32' ],  // unit mWh
+                work: [0x64, 'uint32'],  // unit mWh
+                roadtime: [0x14, 'uint32'], // position on road (subtract 5,000 and divide by 1,000,000 to get actual roadtime)
             },
             // signatures: patterns to search for
             signatures: [
