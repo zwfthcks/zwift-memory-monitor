@@ -625,6 +625,15 @@ class ZwiftMemoryMonitor extends EventEmitter {
           playerData.roadtime = (playerData?.roadtime - 5_000) / 1_000_000
         }
 
+        playerData.powerMeter = (playerData.f19 & 0x1) ? true : false;
+        playerData.companionApp = (playerData.f19 & 0x2) ? true : false;
+        playerData.forward = (playerData.f19 & 0x4) ? true : false;
+        playerData.uTurn = (playerData.f19 & 0x8) ? true : false;
+
+        playerData.rideons = (playerData.f19 >> 24) & 0xFF;
+            
+        playerData.roadId = (playerData.f20 >> 8) & 0xFF;
+
         // verify by reading player id back from memory
         if (this._playerid != memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)) {
           // Probably because Zwift was closed...

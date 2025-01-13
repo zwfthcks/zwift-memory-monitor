@@ -13,24 +13,30 @@ module.exports =
             // offsets: field configuration
             offsets: {
                 // Relative position to player (the baseaddress)
+                player: [0x0, 'uint32'],
                 timestamp: [0x8, 'uint32'], // unit ms 
-                climbing: [0x40, 'uint32'], // 0x10 or 0x118
-                speed: [0x1c, 'uint32'], // unit mm/h
                 distance: [0x10, 'uint32'], // unit m
-                time: [0x44, 'uint32'], // unit s // time on course (excluding lead-in and pedal assist)
+                roadtime: [0x14, 'uint32'], // position on road (subtract 5,000 and divide by 1,000,000 to get actual roadtime)
+                speed: [0x1c, 'uint32'], // unit mm/h
+                laps: [0x24, 'int32'], 
                 cadence_uHz: [0x28, 'uint32'], // unit uHz
+                draft: [0x2c, 'int32'],
                 heartrate: [0x30, 'uint32'], // unit bpm
                 power: [0x34, 'uint32'], // unit W
-                player: [0x0, 'uint32'],
+                climbing: [0x40, 'uint32'], // 0x10 or 0x118
+                time: [0x44, 'uint32'], // unit s // time on course (excluding lead-in and pedal assist)
+                f19: [0x50, 'uint32'], 
+                f20: [0x54, 'uint32'], 
+                work: [0x64, 'uint32'],  // unit mWh
                 x: [0x68, 'float'], 
-                y: [0x80, 'float'], 
                 altitude: [0x6c, 'float'], 
+                y: [0x80, 'float'], 
                 watching: [0x70, 'uint32'],
+                eventDistance: [0x90, 'float'], // unit cm
                 groupId: [0x78, 'uint32'],
+                courseId: [0x94, 'uint32'],
                 routeId: [0xa4, 'uint32'],
                 world: [0x108, 'uint32'],
-                work: [0x64, 'uint32'],  // unit mWh
-                roadtime: [0x14, 'uint32'], // position on road (subtract 5,000 and divide by 1,000,000 to get actual roadtime)
             },
             // signatures: patterns to search for
             signatures: [
