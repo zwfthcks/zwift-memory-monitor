@@ -17,8 +17,8 @@ module.exports =
                 timestamp: [0x8, 'uint32'], // unit ms 
                 distance: [0x10, 'uint32'], // unit m
                 roadtime: [0x14, 'uint32'], // position on road (subtract 5,000 and divide by 1,000,000 to get actual roadtime)
+                laps: [0x18, 'int32'], 
                 speed: [0x1c, 'uint32'], // unit mm/h
-                laps: [0x24, 'int32'], 
                 cadence_uHz: [0x28, 'uint32'], // unit uHz
                 draft: [0x2c, 'int32'],
                 heartrate: [0x30, 'uint32'], // unit bpm
