@@ -641,6 +641,20 @@ class ZwiftMemoryMonitor extends EventEmitter {
           throw new Error(this.lasterror)
         }
 
+        playerData.units = {
+          distance: 'm',
+          elevation: 'm',
+          speed: 'mm/h',
+          power: 'W',
+          heartrate: 'bpm',
+          cadence: 'rpm',
+          calories: 'kcal',
+        }
+
+        playerData.packetInfo = {
+          source: 'zmm',
+        }
+
         this.emit('data', playerData)
 
       } catch (e) {
