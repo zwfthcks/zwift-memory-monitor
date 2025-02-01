@@ -35,7 +35,10 @@ module.exports =
                 eventDistance: [0x90, 'float'], // unit cm
                 groupId: [0x78, 'uint32'],
                 courseId: [0x94, 'uint32'],
+                checkPointId: [0x98, 'uint32'],
                 routeId: [0xa4, 'uint32'],
+                gradientScale: [0xb8, 'uint32'], // 0 ~ 50%, 1 ~ 75%, 2 ~ 100%, 3 ~ 125%
+                elevationScalePct: [0xbc, 'uint32'], // 50, 75, 100, 125
                 world: [0x108, 'uint32'],
             },
             // signatures: patterns to search for
