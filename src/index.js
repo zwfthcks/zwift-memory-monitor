@@ -87,6 +87,17 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // initial values
     this._started = false
 
+
+    // find the path to %ProgramFiles(x86)%
+
+    try {
+      let programFiles = process.env['ProgramFiles(x86)'] || process.env.ProgramFiles || 'C:\\Program Files (x86)';
+      this._options.zwiftAppFolder = path.resolve(programFiles, 'Zwift')
+      this._options.zwiftVerCurFilenameTxt = path.resolve(this._options.zwiftAppFolder, 'Zwift_ver_cur_filename.txt')
+    } catch (e) {
+      this.log('Error in finding Zwift app folder', e)
+    }
+
     // 
     if (!options?.zwiftlog) {
       getDocumentsPath().then((documentsPath) => {
@@ -680,20 +691,24 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // Determine player ID from log.txt
     this.log('Zwift log file:', this._options.zwiftlog)
     if (fs.existsSync(this._options.zwiftlog)) {
-      let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
-      
-      // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
-      let patterns = {
-        user :    /\[(?:[^\]]*)\]\s+(?:NETCLIENT:){0,1}\[INFO\] Player ID: (\d*)/g ,
-      }
-      
-      let match;
-      
-      while ((match = patterns.user.exec(logtxt)) !== null) {
-        let playerid = parseInt(match[1]);
-        this.log(`Zwift seems to run with player ID: ${playerid} = ${('00000000' + playerid.toString(16)).substr(-8)}`)
-        this.emit('info', `playerid ${playerid}`)
-        return playerid
+      try {
+        let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
+        
+        // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
+        let patterns = {
+          user :    /\[(?:[^\]]*)\]\s+(?:NETCLIENT:){0,1}\[INFO\] Player ID: (\d*)/g ,
+        }
+        
+        let match;
+        
+        while ((match = patterns.user.exec(logtxt)) !== null) {
+          let playerid = parseInt(match[1]);
+          this.log(`Zwift seems to run with player ID: ${playerid} = ${('00000000' + playerid.toString(16)).substr(-8)}`)
+          this.emit('info', `playerid ${playerid}`)
+          return playerid
+        }
+      } catch (error) {
+        this.log('Error reading Zwift log file', error);
       }
     } 
   }
@@ -706,24 +721,54 @@ class ZwiftMemoryMonitor extends EventEmitter {
    * @memberof ZwiftMemoryMonitor
    */
   _getGameVersion() {
+
+    if (this._options.zwiftVerCurFilenameTxt && fs.existsSync(this._options.zwiftVerCurFilenameTxt)) {
+      this.log('Zwift version filename file:', this._options.zwiftVerCurFilenameTxt)
+      try {
+        let zwiftVerCurFilename = fs.readFileSync(this._options.zwiftVerCurFilenameTxt, 'utf8').trim()
+        let zwiftVerCurFile = path.resolve(this._options.zwiftAppFolder, zwiftVerCurFilename)
+        this.log('Zwift version file:', zwiftVerCurFile)
+        // remove trailing null bytes from zwiftVerCurFile
+        zwiftVerCurFile = zwiftVerCurFile.replace(/\0/g, '')
+        let xml = fs.readFileSync(zwiftVerCurFile, 'utf8') 
+        // <Zwift version="1.0.139872" sversion="1.83.0 (139872)" gbranch="rc/1.83.0" gcommit="298e0a13bf6c23cfedb09968ae9490965c9e369c" GAME_URL="https://us-or-rly101.zwift.com" manifest="Zwift_1.0.139872_34608a9e_manifest.xml" manifest_checksum="-1006471014" ver_cur_checksum="-1183981758"/>
+        // Find the version number in the XML in the sversion attribute
+        let match = xml.match(/sversion="((?:\d+)\.(?:\d+)\.(?:\d+))/)
+        if (match && match[1]) {
+          this.log(`Zwift seems to be version: ${match[1]}`)
+          this.emit('info', `version ${match[1]}`)
+          return match[1]
+        }
+      } catch (e) {
+        // 
+        this.log('Error reading Zwift version file', e)
+      }
+    }
+
+    // Fall back to reading from log.txt
+
     // Determine game version from log.txt
     this.log('Zwift log file:', this._options.zwiftlog)
     if (fs.existsSync(this._options.zwiftlog)) {
-      let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
+      try {
+        let logtxt = fs.readFileSync(this._options.zwiftlog, 'utf8');
 
-      // [15:56:28] Game Version: 1.26.1(101164) dda86fe0235debd7146c0d8ceb1b0d5d626ddf77
-      let patterns = {
-        version :    /\[(?:[^\]]*)\]\s+Game Version: ((?:\d+)\.(?:\d+)\.(?:\d+))/g ,
+        // [15:56:28] Game Version: 1.26.1(101164) dda86fe0235debd7146c0d8ceb1b0d5d626ddf77
+        let patterns = {
+          version: /\[(?:[^\]]*)\]\s+Game Version: ((?:\d+)\.(?:\d+)\.(?:\d+))/g,
+        };
+
+        let match;
+
+        while ((match = patterns.version.exec(logtxt)) !== null) {
+          this.log(`Zwift seems to be version: ${match[1]}`);
+          this.emit('info', `version ${match[1]}`);
+          return match[1];
+        }
+      } catch (error) {
+        this.log('Error reading Zwift log file', error);
       }
-      
-      let match;
-      
-      while ((match = patterns.version.exec(logtxt)) !== null) {
-        this.log(`Zwift seems to be version: ${match[1]}`)
-        this.emit('info', `version ${match[1]}`)
-        return match[1];
-      }
-    } 
+    }
   }
 
 
