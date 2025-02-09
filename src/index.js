@@ -194,8 +194,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this._started = false
 
     this._retry = this._options?.retry || false
-    this._zwiftversion = this._getGameVersion() || '0.0.0'
-    process.exit();
+
     // Find the Zwift process
     try {
       this._processObject = memoryjs.openProcess(this._options.zwiftapp);
