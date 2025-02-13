@@ -727,9 +727,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
       try {
         let zwiftVerCurFilename = fs.readFileSync(this._options.zwiftVerCurFilenameTxt, 'utf8').trim()
         let zwiftVerCurFile = path.resolve(this._options.zwiftAppFolder, zwiftVerCurFilename)
-        this.log('Zwift version file:', zwiftVerCurFile)
         // remove trailing null bytes from zwiftVerCurFile
         zwiftVerCurFile = zwiftVerCurFile.replace(/\0/g, '')
+        this.log('Zwift version file:', zwiftVerCurFile)
         let xml = fs.readFileSync(zwiftVerCurFile, 'utf8') 
         // <Zwift version="1.0.139872" sversion="1.83.0 (139872)" gbranch="rc/1.83.0" gcommit="298e0a13bf6c23cfedb09968ae9490965c9e369c" GAME_URL="https://us-or-rly101.zwift.com" manifest="Zwift_1.0.139872_34608a9e_manifest.xml" manifest_checksum="-1006471014" ver_cur_checksum="-1183981758"/>
         // Find the version number in the XML in the sversion attribute
