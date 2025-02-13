@@ -387,19 +387,23 @@ module.exports =
                 weight: [4*4, 'uint32'], // g
                 ftp: [5*4, 'uint32'], // W
                 bodyType: [7*4, 'uint32'], // 
+                flag: [34 * 4, 'uint32'], //
                 height: [42*4, 'uint32'], // mm
                 maxhr: [43*4, 'uint32'], // bpm
                 drops: [45*4, 'uint32'], // 
                 achievementLevel: [46*4, 'uint32'], // 
-                age: [51*4, 'uint32'], // 
+                age: [51 * 4, 'uint32'], // 
             },
             signatures: [
                 {
-                    start: '00 00 00 00 00 00 00 00',
-                    // end: '00 00 00 00 ? 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-                    end: '00 00 00 00 00 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-                    // end: '00 00 00 00 01 00 00 00 00 00 00 00',
-                    addressOffset: 8
+                    // pattern: '<player> 00 00 00 00 ' + Array(7*4).fill('? ? ? ?').join(' ') + ' <flag>',
+                    pattern: '<player> 00 00 00 00 ',
+                    heuristic: {
+                        min: 34 * 4,
+                        max: 34 * 4,
+                        secondPattern: '<flag>',
+                    },
+                    addressOffset: 0
                 }
             ],
         },

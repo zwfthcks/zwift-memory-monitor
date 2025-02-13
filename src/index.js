@@ -99,10 +99,16 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
 
     // 
-    if (!options?.zwiftlog) {
+    if (!options?.zwiftlog || !options?.prefsxml) {
       getDocumentsPath().then((documentsPath) => {
-        // zwiftlog: path to log.txt for Zwift
-        this._options.zwiftlog = path.resolve(documentsPath, 'Zwift', 'Logs', 'Log.txt')
+        if (!options?.zwiftlog) {
+          // zwiftlog: path to log.txt for Zwift
+          this._options.zwiftlog = path.resolve(documentsPath, 'Zwift', 'Logs', 'Log.txt')
+        }
+        if (!options?.prefsxml) {
+          // prefsxml: path to prefs.xml for Zwift
+          this._options.prefsxml = path.resolve(documentsPath, 'Zwift', 'prefs.xml')
+        }
         this._ready = true
         this.emit('ready')
       })
@@ -237,8 +243,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
         }
       }
 
+
+      // check if there are signatures to search for and if they use <player> or <flag> placeholders
+
       if (this._options?.signatures) {
         this._playerid = this._options?.playerid || this._getPlayerid() || 0
+        this._flagid = this._options?.flagid || this._getFlagId() || 0
       } else {
         this.lasterror = 'Missing signature for current game version'
       }
@@ -246,6 +256,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (this._options?.signatures && this?._playerid > 0) {
         
         let playeridPattern = ('00000000' + this._playerid.toString(16)).slice(-8).match(/../g).reverse().join(' ')
+        let flagidPattern = ('00000000' + this._flagid.toString(16)).slice(-8).match(/../g).reverse().join(' ')
 
         let cachedScan = undefined;
 
@@ -262,8 +273,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
               // convert old style start+end signature to new style pattern
               signature.pattern = `${signature?.start} <player> ${signature?.end}`
             }
-            let pattern = signature.pattern.replace(/<player>/ig, playeridPattern)
+            let pattern = signature.pattern.replace(/<player>/ig, playeridPattern).replace(/<flag>/ig, flagidPattern)
             this.log(pattern);
+            let secondPattern = signature?.heuristic?.secondPattern?.replace(/<player>/ig, playeridPattern).replace(/<flag>/ig, flagidPattern) ?? pattern;
+            this.log(secondPattern);
 
             let addressOffset = signature?.addressOffset || 0;
     
@@ -274,6 +287,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
               let heuristic = {
                 min: signature.heuristic.min ?? 8 + 16 * 4,
                 max: signature.heuristic.max ?? 8 + 32 * 4,
+                secondPattern: secondPattern,
                 mustMatch: signature.heuristic.mustMatch ?? [ ],
                 mustDiffer: signature.heuristic.mustDiffer ?? [ ],
                 mustBeGreaterThanEqual: signature.heuristic.mustBeGreaterThanEqual ?? null,
@@ -382,7 +396,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
     let regions = memoryjs.getRegions(processObject.handle);
     
     let hexPattern = pattern.split(' ').join('')
-    
+    let secondHexPattern = (heuristic.secondPattern ?? '').split(' ').join('')
+
     let chunkSize = 1024 * 1024 * 2;
     let overlap = hexPattern.length / 2;
 
@@ -441,19 +456,32 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this.log('FOUND ADDRESSES:')
     this.log(foundAddresses)
 
+
+
+
     // loop through foundAddresses and calculate the offset between two adjacent elements
     let offsets = [];
     let lastAddress = 0;
     foundAddresses.forEach((address) => {
       
       let thisAddress = parseInt(address, 16);
-      if (lastAddress) {
+
+      if (heuristic.secondPattern && heuristic.secondPattern != pattern) {
+        // we don't need to calculate offsets because the secondPattern check is done a bit later
         offsets.push({
           address: address,
-          offset: thisAddress - lastAddress
+          offset: 0
         })
+      } else {
+        // do the real offset calculation
+        if (lastAddress) {
+          offsets.push({
+            address: address,
+            offset: thisAddress - lastAddress
+          })
+        }
+        lastAddress = thisAddress;
       }
-      lastAddress = thisAddress;
 
     })
     
@@ -463,8 +491,25 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
     let wantedAddress = 0;
     let wantedOffset;;
-    offsets.some( (offset) => {
-      if ((offset.offset >= (heuristic.min ?? 0)) && (offset.offset <= (heuristic.max ?? 0) && offset.offset % 4 == 0)) {
+    offsets.some((offset) => {
+      
+      let isCandidate = false;
+      if (heuristic.secondPattern && offset.offset == 0) {
+        // candidate if secondPattern matches
+        
+        
+        console.log(processObject.handle, offset.address, heuristic.min, secondHexPattern.length / 2)
+        let read = memoryjs.readBuffer(processObject.handle, parseInt(offset.address, 16) + heuristic.min, secondHexPattern.length / 2).toString('hex')
+        if (read == secondHexPattern) {
+          isCandidate = true;
+        }
+
+
+      } else if ((offset.offset >= (heuristic.min ?? 0)) && (offset.offset <= (heuristic.max ?? 0) && offset.offset % 4 == 0)) {
+        isCandidate = true;
+      }
+
+      if (isCandidate) {
 
         this.log('CHECKING this address:', offset.address)
 
@@ -682,6 +727,40 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
   }
 
+
+  /**
+   *
+   *
+   * @return {*} 
+   * @memberof ZwiftMemoryMonitor
+   */
+  _getFlagId() {
+    // Determine country ID from prefs.xml
+    this.log('Zwift prefs.xml file:', this._options.prefsxml)
+    if (fs.existsSync(this._options.prefsxml)) {
+      try {
+        let prefsxmltxt = fs.readFileSync(this._options.prefsxml, 'utf8');
+        
+        // <flag>208</flag>
+        let patterns = {
+          flag :   /<flag>(\d*)<\/flag>/g ,
+        }
+        
+        let match;
+        
+        while ((match = patterns.flag.exec(prefsxmltxt)) !== null) {
+          let flagid = parseInt(match[1]);
+          this.log(`Zwift seems to run with flag ID: ${flagid} = ${('00000000' + flagid.toString(16)).substr(-8)}`)
+          this.emit('info', `flagid ${flagid}`)
+          return flagid
+        }
+      } catch (error) {
+        this.log('Error reading Zwift prefs.xml file', error);
+      }
+    } 
+  }
+
+ 
 
   /**
    *
