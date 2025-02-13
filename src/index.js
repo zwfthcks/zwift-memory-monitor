@@ -671,30 +671,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
           playerData[key] = memoryjs.readMemory(this?._processObject?.handle, this._addresses[key][0], this._addresses[key][1])
         })
 
-        if (playerData?.cadence_uHz >= 0) {
-          playerData.cadence = Math.round(playerData?.cadence_uHz / 1000000 * 60)
-        }
-
-        if (playerData?.work >= 0) {
-          playerData.calories = Math.round(playerData?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
-        }
-
-        if (playerData?.roadtime >= 0) {
-          playerData.roadtime = (playerData?.roadtime - 5_000) / 1_000_000
-        }
-
-        playerData.powerMeter = (playerData.f19 & 0x1) ? true : false;
-        playerData.companionApp = (playerData.f19 & 0x2) ? true : false;
-        playerData.forward = (playerData.f19 & 0x4) ? true : false;
-        playerData.uTurn = (playerData.f19 & 0x8) ? true : false;
-
-        playerData.rideons = (playerData.f19 >> 24) & 0xFF;
-            
-        playerData.roadId = (playerData.f20 >> 8) & 0xFFFF;
-        playerData.isPortalRoad = (playerData.roadId >= 10000) || false;
-
-        playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
-
         // verify by reading player id back from memory
         if (this._playerid != memoryjs.readMemory(this._processObject.handle, this._baseaddress, memoryjs.UINT32)) {
           // Probably because Zwift was closed...
@@ -702,14 +678,13 @@ class ZwiftMemoryMonitor extends EventEmitter {
           throw new Error(this.lasterror)
         }
 
-        playerData.units = {
-          distance: 'm',
-          elevation: 'm',
-          speed: 'mm/h',
-          power: 'W',
-          heartrate: 'bpm',
-          cadence: 'rpm',
-          calories: 'kcal',
+        // if playerData has both f19 and f20, then we have a valid playerData object
+        if ((playerData.f19 ?? undefined) != undefined && (playerData.f20 ?? undefined) != undefined) {
+          this.extendPlayerStateData(playerData)
+        } 
+        // if playerData has flag and age, then we have a valid playerData object
+        if ((playerData.flag ?? undefined) != undefined && (playerData.age ?? undefined) != undefined) {
+          this.extendPlayerProfileData(playerData)
         }
 
         playerData.packetInfo = {
@@ -725,6 +700,60 @@ class ZwiftMemoryMonitor extends EventEmitter {
       }
 
     }
+  }
+
+
+  extendPlayerStateData(playerData) {
+    //
+
+    
+    if (playerData?.cadence_uHz >= 0) {
+      playerData.cadence = Math.round(playerData?.cadence_uHz / 1000000 * 60)
+    }
+
+    if (playerData?.work >= 0) {
+      playerData.calories = Math.round(playerData?.work  * 3600 / 1000 / 4.184 / 0.25 / 1000)
+    }
+
+    if (playerData?.roadtime >= 0) {
+      playerData.roadtime = (playerData?.roadtime - 5_000) / 1_000_000
+    }
+
+    
+    playerData.powerMeter = (playerData.f19 & 0x1) ? true : false;
+    playerData.companionApp = (playerData.f19 & 0x2) ? true : false;
+    playerData.forward = (playerData.f19 & 0x4) ? true : false;
+    playerData.uTurn = (playerData.f19 & 0x8) ? true : false;
+
+    playerData.rideons = (playerData.f19 >> 24) & 0xFF;
+        
+    playerData.roadId = (playerData.f20 >> 8) & 0xFFFF;
+    playerData.isPortalRoad = (playerData.roadId >= 10000) || false;
+
+    playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
+
+    
+    playerData.units = {
+      distance: 'm',
+      elevation: 'm',
+      speed: 'mm/h',
+      power: 'W',
+      heartrate: 'bpm',
+      cadence: 'rpm',
+      calories: 'kcal',
+    }
+
+  }
+
+
+  extendPlayerProfileData(playerData) {
+    //
+    
+    playerData.units = {
+      height: 'cm',
+      maxhr: 'bpm',
+    }
+
   }
 
 
