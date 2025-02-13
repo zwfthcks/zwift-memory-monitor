@@ -191,6 +191,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
     if (!this._ready) return false;
 
+    this.emit('status.scanning')
+
     this._started = false
 
     this._retry = this._options?.retry || false
@@ -293,7 +295,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
     }
     
-    // If configured in options the wait 10 seconds and try again
+    // If configured in options then wait 10 seconds and try again
     if (this._retry && !this._started) {
       this.emit('status.retrying', this.lasterror)
       this._retryTimeout = setTimeout(() => {
