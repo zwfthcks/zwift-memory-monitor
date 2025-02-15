@@ -31,7 +31,7 @@ zmm.on('status.stopping', () => {
 
 zmm.once('ready', () => {
     try {
-        zmm.loadPatterns(['playerprofile', 'playerstate'])
+        zmm.loadPatterns(['playerstate'])
     } catch (e) {
         console.log('error in zmm.loadPatterns(): ', e, zmm.lasterror)
     }

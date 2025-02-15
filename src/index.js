@@ -526,23 +526,56 @@ class ZwiftMemoryScanner {
     if (this._patternAddressCache.has(hexPattern)) {
       foundAddresses = this._patternAddressCache.get(pattern)
     } else {
+      const regions = memoryjs.getRegions(processObject.handle);
 
-      let regions = memoryjs.getRegions(processObject.handle);
-      
-      let chunkSize = 1024 * 1024 * 2;
-      let overlap = hexPattern.length / 2;
+      // Increased chunk size for fewer reads
+      const chunkSize = 1024 * 1024 * 4; // 4MB chunks
+      const overlap = hexPattern.length / 2;
+      const patternLength = hexPattern.length / 2;
 
+      // Pre-filter regions to only those we care about
+      const validRegions = regions.filter(region =>
+        !region.szExeFile
+        && // Skip executable regions
+        region.RegionSize > 0 && // Skip empty regions
+        ((region.Protect & 0x02) || (region.Protect & 0x04)) // Only check readable and r/w regions (TODO: Confirm this is correct)
+      );
+
+      // Buffer reuse to avoid allocation overhead
       let regionBuffer;
-      
-      regions.forEach((region) => {
-        if (region.szExeFile) return; // skip this region if szExeFile is set
-      
-        let baseAddress = region.BaseAddress
-      
-        while (baseAddress < region.BaseAddress + region.RegionSize) {
-          regionBuffer = memoryjs.readBuffer(processObject.handle, baseAddress, Math.min(chunkSize, region.BaseAddress + region.RegionSize - baseAddress));
-          // this.log(regionBuffer.toString('hex'))
-          // this.log(regionBuffer)
+
+      for (const region of validRegions) {
+        // console.log(region.BaseAddress, region.RegionSize, region.AllocationProtect, region.Protect, region.Type, region.State, region.szExeFile)
+        // console.log(region)
+        let baseAddress = region.BaseAddress;
+        const endAddress = region.BaseAddress + region.RegionSize;
+
+        while (baseAddress < endAddress) {
+          const readSize = Math.min(chunkSize, endAddress - baseAddress);
+
+          try {
+            regionBuffer = memoryjs.readBuffer(processObject.handle, baseAddress, readSize);
+          } catch (e) {
+            // Skip failed reads
+            baseAddress += chunkSize - overlap;
+            continue;
+          }
+
+          // code by copilot:
+          // let patternIndex = 0;
+
+          // // Use while loop instead of do-while for better performance
+          // while ((patternIndex = regionBuffer.indexOf(hexPattern, patternIndex, 'hex')) !== -1) {
+          //   const address = baseAddress + patternIndex;
+
+          //   // Verify pattern at address
+          //   foundAddresses.push(address);
+
+          //   patternIndex += patternLength;
+          // }
+          // < end of code by copilot
+
+          // My original code:
           
           let patternIndex;
           let byteOffset = 0;
@@ -551,31 +584,22 @@ class ZwiftMemoryScanner {
             patternIndex = regionBuffer.indexOf(hexPattern, byteOffset, 'hex');  // the first occurrence of the pattern (if any)
             
             if (patternIndex >= 0) {
-              // this.log('FOUND PATTERN AT', patternIndex, 'in region', region.BaseAddress, 'from chunk at', baseAddress.toString(16).toUpperCase())
-              // this.log(regionBuffer)
-              // this.log('at patternIndex', patternIndex)
-              // this.log(regionBuffer.slice(patternIndex, patternIndex + (hexPattern.length / 2)).toString('hex'))
-              // this.log(regionBuffer.slice(patternIndex, patternIndex + (hexPattern.length / 2)).toString('utf8'))
-              
-              // this.log('at address:', baseAddress + patternIndex, (baseAddress + patternIndex).toString(16).toUpperCase())
-      
               
               let readBack = memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex')
               if (readBack == hexPattern) {
-                // foundAddresses.push((baseAddress + patternIndex).toString(16).toUpperCase())
                 foundAddresses.push(baseAddress + patternIndex)
               }
-      
-              // this.log('reading back:',memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex'))
-              
-              byteOffset = patternIndex + (hexPattern.length / 2) + 1
+              byteOffset = patternIndex + patternLength + 1
             }
           } while (patternIndex >= 0)
-      
-          baseAddress += chunkSize - overlap
+
+            // < end of my original code
+
+
+          baseAddress += chunkSize - overlap;
         }
-      })
-    
+      }
+
     }
 
     // filter out duplicates and verify that the pattern still is at the found address
@@ -585,7 +609,7 @@ class ZwiftMemoryScanner {
     })
 
     this._patternAddressCache.set(hexPattern, foundAddresses)
-    
+
     this.log('FOUND ADDRESSES:')
     this.log(foundAddresses.map((address) => address.toString(16).toUpperCase()))
 
@@ -599,17 +623,17 @@ class ZwiftMemoryScanner {
       offsets.set(address, address - lastAddress)
       lastAddress = address;
     })
-    
+
     // this.log('OFFSETS:')
     // this.log(offsets.map((offset) => address.toString(16).toUpperCase() + ' ' + offset.offset))
-    
+
     // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
     let wantedAddress = 0;
     let wantedOffset;
 
     // offsets.some((offset) => {
     foundAddresses.some((address) => {
-      
+
 
       this.log('CHECKING this address:', address)
 
@@ -670,7 +694,7 @@ class ZwiftMemoryScanner {
           this.log('Not the wanted address:', address.toString(16).toUpperCase())
           return false;
         }
-      
+
       }
 
       if (rules.mustBeGreaterThanEqual) {
@@ -679,7 +703,7 @@ class ZwiftMemoryScanner {
         //   power: [0x34, 'uint32', 0],
         //   heartrate: [0x30, 'uint32', 0]
         // },
-        
+
         // loop over the mustBeGreaterThanEqual object and check that the value at the address is greater than or equal to the value
         let greaterThanEqual = Object.keys(rules.mustBeGreaterThanEqual).every((key) => {
           let value = rules.mustBeGreaterThanEqual[key][2];
@@ -702,7 +726,7 @@ class ZwiftMemoryScanner {
         //   power: [0x34, 'uint32', 0],
         //   heartrate: [0x30, 'uint32', 0]
         // },
-        
+
         // loop over the mustBeLessThanEqual object and check that the value at the address is greater than or equal to the value
         let lessThanEqual = Object.keys(rules.mustBeLessThanEqual).every((key) => {
           let value = rules.mustBeLessThanEqual[key][2];
@@ -727,12 +751,12 @@ class ZwiftMemoryScanner {
       wantedAddress = address;
       wantedOffset = offset;
       return true;
-      
+
     })
-    
+
     this.log('WANTED ADDRESS and OFFSET:')
-    this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset-8)/4}*4 )` : '')
-  
+    this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )` : '')
+
     if (wantedAddress) {
       callback(null, wantedAddress + addressOffset)
     }
