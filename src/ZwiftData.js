@@ -3,6 +3,36 @@ const path = require('node:path');
 const memoryjs = require('memoryjs');
 const { getDocumentsPath } = require('platform-paths');
 
+/**
+ * @class ZwiftData
+ * @description A class to handle Zwift game data and process management
+ * 
+ * @property {Function} log - Logging function, defaults to console.log
+ * @property {string} exe - Executable name, defaults to 'ZwiftApp.exe'
+ * @property {string} appFolder - Zwift installation folder path
+ * @property {string} zwiftVerCurFilenameTxtPath - Path to version filename text file
+ * @property {string} logTxtPath - Path to Zwift log file
+ * @property {string} prefsXmlPath - Path to Zwift preferences XML file
+ * @property {string} _version - Cached Zwift version
+ * @property {number} _flagId - Cached flag/country ID
+ * @property {number} _playerId - Cached player ID
+ * @property {number} _sportId - Cached sport ID 
+ * @property {number} _worldId - Cached world ID
+ * @property {Object} _process - Cached process object
+ * 
+ * @param {Object} [options={}] - Configuration options
+ * @param {Function} [options.log] - Custom logging function
+ * @param {string} [options.exe] - Custom executable name
+ * @param {string} [options.appFolder] - Custom app folder path
+ * @param {string} [options.zwiftVerCurFilenameTxtPath] - Custom version filename path
+ * @param {string} [options.logTxtPath] - Custom log file path
+ * @param {string} [options.prefsXmlPath] - Custom preferences file path
+ * @param {string} [options.version] - Override version
+ * @param {number} [options.flagId] - Override flag ID
+ * @param {number} [options.playerId] - Override player ID
+ * @param {number} [options.sportId] - Override sport ID
+ * @param {number} [options.worldId] - Override world ID
+ */
 class ZwiftData {
     constructor(options = {}) {
 
@@ -37,6 +67,13 @@ class ZwiftData {
     }
 
 
+    /**
+     * Initializes the Zwift data paths if they are not already set.
+     * Sets up paths to log.txt and prefs.xml in the Zwift documents folder.
+     * @async
+     * @returns {Promise<boolean>} Returns true when initialization is complete
+     * @throws {Error} May throw an error if getDocumentsPath() fails
+     */
     async init() {
 
         if (!this.logTxtPath || !this?.prefsxmlPath) {
@@ -53,6 +90,12 @@ class ZwiftData {
         return true;
     }
 
+    /**
+     * Gets the Zwift process handle or null if not found
+     * @returns {Object|null} The process handle object or null if process is not found
+     * @throws {Error} When there is an error opening the process
+     * @memberof ZwiftData
+     */
     get process() {
 
         if (!this._process) {
@@ -68,10 +111,18 @@ class ZwiftData {
         return this._process ?? null
     }
 
+    /**
+     * Sets the process object manually
+     * @param {Object} processObject - The process object to set
+     */
     set process(processObject) {
         this.processObject = processObject
     }
 
+    /**
+     * Closes the handle to the Zwift process
+     * @throws {Error} When there is an error closing the process handle
+     */
     closeProcess() {
         try {
             memoryjs.closeHandle(this._process.handle)
@@ -83,6 +134,10 @@ class ZwiftData {
         this._process = null
     }
 
+    /**
+     * Gets the Zwift game version from cached value or files
+     * @returns {string} The version number in format x.x.x
+     */
     get version() {
         if (!this._version) {
             this._version = this.getGameVersion() || '0.0.0'
@@ -90,10 +145,18 @@ class ZwiftData {
         return this._version
     }
 
+    /**
+     * Sets the Zwift game version manually
+     * @param {string} version - The version number to set
+     */
     set version(version) {
         this._version = version
     }
 
+    /**
+     * Reads the game version from version files or log file
+     * @returns {string} The version number in format x.x.x
+     */
     getGameVersion() {
         if (this._version) {
             return this._version
@@ -133,6 +196,10 @@ class ZwiftData {
     }
 
 
+    /**
+     * Gets the player's country flag ID from prefs.xml
+     * @returns {number|undefined} The flag ID number or undefined if not found
+     */
     getFlagId() {
         if ((this._flagId ?? undefined) !== undefined) {
             return this._flagId
@@ -162,6 +229,10 @@ class ZwiftData {
         }
     }
 
+    /**
+     * Gets the player ID from log file
+     * @returns {number|undefined} The player ID or undefined if not found
+     */
     getPlayerId() {
         if ((this._playerId ?? undefined) !== undefined) {
             return this._playerId
@@ -175,6 +246,10 @@ class ZwiftData {
         }
     }
 
+    /**
+     * Gets the current sport ID from log file
+     * @returns {number} The sport ID (0 if not found)
+     */
     getSportId() {
         if ((this._sportId ?? undefined) !== undefined) {
             return this._sportId
@@ -186,6 +261,10 @@ class ZwiftData {
     }
 
 
+    /**
+     * Gets the current world ID from log file
+     * @returns {number} The world ID (0 if not found)
+     */
     getWorldId() {
         if ((this._worldId ?? undefined) !== undefined) {
             return this._worldId
@@ -197,6 +276,16 @@ class ZwiftData {
     }
 
 
+    /**
+     * Helper method to get the last matching item from a pattern in the log file
+     * @private
+     * @param {RegExp} pattern - Regular expression pattern to match
+     * @param {number} matchItem - Index of the capture group to return
+     * @param {string} [key] - Unused parameter
+     * @param {string} [description=''] - Unused parameter
+     * @param {boolean} [emit=false] - Unused parameter
+     * @returns {string|undefined} The last matching value or undefined if not found
+     */
     _getLast(pattern, matchItem, key, description = '', emit = false) {
         // this.log('Zwift log file:', this._options.zwiftlog)
         if (fs.existsSync(this.logTxtPath)) {

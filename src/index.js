@@ -45,14 +45,21 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // log: console.log // function for logging, e.g. console.log
 
     // possible options besides the default options:
-    // zwift: {
-    //   version: '1.0.0',
-    //   playerid: use this playerid and do not attempt to detect it from log.txt
-    //   zwiftlog: path to log.txt for Zwift
-    //   zwiftapp: the process name to look for
-    // }
 
-
+    // zwift: { ... } // options for ZwiftData
+    // Override the values in zwift (some or all) to control where the monitor looks for Zwift data:
+    // - exe
+    // - appFolder
+    // - zwiftVerCurFilenameTxtPath
+    // - logTxtPath
+    // - prefsXmlPath
+    // Override values in zwift (some or all) to avoid reading from files:
+    // - _version
+    // - _flagId
+    // - _playerId
+    // - _sportId
+    // - _worldId
+  
     this._patterns = new Map();
     this._patternAddressCache = new Map();
 
