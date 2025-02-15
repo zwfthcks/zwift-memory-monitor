@@ -1,14 +1,35 @@
 // testapp.js
 
-// Build to a executable with yao-pkg:
+// Build to an executable with yao-pkg:
 // npx yao-pkg testapp.js
-// Build to a executable with bun:
+// Build to an executable with bun:
 // bun build --compile testapp.js
 
+// testapp.exe can be used for testing the ZwiftMemoryMonitor (e.g. src/examples/testappstate.js)
+// easier and with less system impact than using Zwift itself
 
 
 // This script will write a counter to a buffer every 2 seconds
 // and output the buffer as a hex string
+
+// Example pattern for testapp.exe in lookup.js:
+// testappHit: [
+//     {
+//         type: 'testapp',
+//         versions: "*",
+//         offsets: {
+//             test: [8, 'uint32'],
+//             zero: [12, 'uint32'],
+//         },
+//         signatures: [
+//             {
+//                 pattern: '54 45 53 54 41 50 50 21',
+//                 rules: {},
+//                 addressOffset: 0
+//             }
+//         ],
+//     }
+// ],
 
 
 // Import the buffer module
