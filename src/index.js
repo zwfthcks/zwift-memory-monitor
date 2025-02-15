@@ -6,6 +6,7 @@
 const EventEmitter = require('node:events')
 const memoryjs = require('memoryjs');
 const semver = require('semver')
+const crypto = require('crypto');
 
 const patternDefinitions = require('./lookup.js')
 
@@ -199,15 +200,16 @@ class ZwiftMemoryMonitor extends EventEmitter {
         .then((data) => {
           this.log(JSON.stringify(data, '', 2))
 
-          if (!data?.type) {
+          let type = data[0]?.type ?? null
+          if (!type) {
             const hash = crypto.createHash('sha256');
             hash.update(fetchPatternURL);
             const urlHash = hash.digest('hex');
-            data.type = urlHash
+            type = urlHash
           }
 
-          this._patterns.set(data.type, data)
-          this.emit('status.loaded', data.type)
+          this._patterns.set(type, data)
+          this.emit('status.loaded', type)
         })
         .catch()
     }
