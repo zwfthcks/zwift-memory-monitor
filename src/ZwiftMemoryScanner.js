@@ -252,7 +252,7 @@ class ZwiftMemoryScanner {
                         continue;
                     }
 
-                    // code by copilot:
+                    // code by copilot: >
                     // let patternIndex = 0;
 
                     // // Use while loop instead of do-while for better performance
@@ -266,8 +266,8 @@ class ZwiftMemoryScanner {
                     // }
                     // < end of code by copilot
 
-                    // My original code:
 
+                    // My original code: >
                     let patternIndex;
                     let byteOffset = 0;
 
@@ -295,14 +295,12 @@ class ZwiftMemoryScanner {
 
         // filter out duplicates and verify that the pattern still is at the found address
         foundAddresses = [...new Set(foundAddresses)].filter((address) => {
-            // return hexPattern == memoryjs.readBuffer(processObject.handle, parseInt(address, 16), hexPattern.length / 2).toString('hex')
             return hexPattern == memoryjs.readBuffer(processObject.handle, address, hexPattern.length / 2).toString('hex')
         })
 
         this._patternAddressCache.set(hexPattern, foundAddresses)
 
         this.log('FOUND ADDRESSES:', foundAddresses.length)
-        // this.log(foundAddresses.map((address) => address.toString(16).toUpperCase()))
 
         // loop through foundAddresses and calculate the offset between two adjacent elements
         let offsets = new Map();
@@ -312,19 +310,13 @@ class ZwiftMemoryScanner {
             lastAddress = address;
         })
 
-        // this.log('OFFSETS:')
-        // this.log(offsets.map((offset) => address.toString(16).toUpperCase() + ' ' + offset.offset))
-
         // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
         let wantedAddress = 0;
         let wantedOffset;
 
-        // offsets.some((offset) => {
         foundAddresses.some((address) => {
 
-
             this.log('CHECKING this address:', address)
-
 
             let offset = offsets.get(address) ?? 0;
 
@@ -336,7 +328,7 @@ class ZwiftMemoryScanner {
             }
 
             if (rules.mustBeVariable && rules.mustBeVariable?.length > 0) {
-                //   mustBeVariable: [
+                //   Example mustBeVariable: [
                 //     [0x48, 'uint32', '<sport>'], // offset, type, variable
                 //     [0x108, 'uint32', '<world>'], // offset, type, variable
                 // ],
@@ -354,7 +346,6 @@ class ZwiftMemoryScanner {
                     this.log('Not the wanted address:', address.toString(16).toUpperCase(), '(failed mustBeVariable)')
                     return false;
                 }
-
             }
 
             if (rules.mustMatch && rules.mustMatch?.length > 0) {
@@ -368,7 +359,6 @@ class ZwiftMemoryScanner {
                     this.log('Not the wanted address:', address.toString(16).toUpperCase())
                     return false;
                 }
-
             }
 
             if (rules.mustDiffer && rules.mustDiffer?.length > 0) {
@@ -382,12 +372,10 @@ class ZwiftMemoryScanner {
                     this.log('Not the wanted address:', address.toString(16).toUpperCase())
                     return false;
                 }
-
             }
 
             if (rules.mustBeGreaterThanEqual) {
-
-                // mustBeGreaterThanEqual: {
+                // Example mustBeGreaterThanEqual: {
                 //   power: [0x34, 'uint32', 0],
                 //   heartrate: [0x30, 'uint32', 0]
                 // },
@@ -409,8 +397,7 @@ class ZwiftMemoryScanner {
             }
 
             if (rules.mustBeLessThanEqual) {
-
-                // mustBeLessThanEqual: {
+                // Example mustBeLessThanEqual: {
                 //   power: [0x34, 'uint32', 0],
                 //   heartrate: [0x30, 'uint32', 0]
                 // },
@@ -432,10 +419,9 @@ class ZwiftMemoryScanner {
             }
 
 
-            // this.log('ALL CHECKS TRUE for', address)
+            // --
             this.log('ALL CHECKS TRUE for', address.toString(16).toUpperCase())
 
-            // wantedAddress = parseInt(address, 16);
             wantedAddress = address;
             wantedOffset = offset;
             return true;
@@ -460,8 +446,6 @@ class ZwiftMemoryScanner {
      */
     stop() {
 
-        // if (!this._ready) return false;
-
         this._started = false
 
         if (this?._timeout) {
@@ -472,7 +456,6 @@ class ZwiftMemoryScanner {
             clearInterval(this._interval)
             this._interval = null
         }
-
 
         this.zmm.emit('status.scanner.stopped', this._type)
 
@@ -494,8 +477,7 @@ class ZwiftMemoryScanner {
                     playerData[key] = memoryjs.readMemory(this?._zwift.process?.handle, this._addresses[key][0], this._addresses[key][1])
                 })
 
-                // verify by reading player id back from memory
-                // if (this._playerid != memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)) {
+                // verify by reading first 4 bytes of pattern back from memory
                 if (!this._pattern.startsWith(numberToPattern(memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)))) {
                     // Probably because Zwift was closed...
                     this.lasterror = 'Could not verify pattern in memory'
@@ -530,10 +512,32 @@ class ZwiftMemoryScanner {
     }
 
 
+    /**
+     * Extends the player state data with calculated values and additional properties
+     * @param {Object} playerData - The raw player state data object
+     * @param {number} [playerData.cadence_uHz] - Cadence in micro-hertz
+     * @param {number} [playerData.work] - Work done in joules
+     * @param {number} [playerData.roadtime] - Road time in microseconds since start
+     * @param {number} playerData.f19 - Bitfield containing powerMeter, companionApp, forward, uTurn and rideons data
+     * @param {number} playerData.f20 - Bitfield containing roadId data
+     * @param {number} playerData.gradientScale - Gradient scale factor
+     * @returns {void}
+     * 
+     * @property {number} playerData.cadence - Calculated cadence in RPM
+     * @property {number} playerData.calories - Calculated calories burned
+     * @property {number} playerData.roadtime - Normalized road time in seconds
+     * @property {boolean} playerData.powerMeter - Whether power meter is present
+     * @property {boolean} playerData.companionApp - Whether companion app is connected
+     * @property {boolean} playerData.forward - Whether player is moving forward
+     * @property {boolean} playerData.uTurn - Whether player is in U-turn state
+     * @property {number} playerData.rideons - Number of ride-ons received
+     * @property {number} playerData.roadId - Current road ID
+     * @property {boolean} playerData.isPortalRoad - Whether current road is a portal road
+     * @property {number} playerData.gradientScalePct - Calculated gradient scale percentage
+     * @property {Object} playerData.units - Unit definitions for various measurements
+     */
     extendPlayerStateData(playerData) {
         //
-
-
         if (playerData?.cadence_uHz >= 0) {
             playerData.cadence = Math.round(playerData?.cadence_uHz / 1000000 * 60)
         }
@@ -559,7 +563,6 @@ class ZwiftMemoryScanner {
 
         playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
 
-
         playerData.units = {
             distance: 'm',
             elevation: 'm',
@@ -573,14 +576,19 @@ class ZwiftMemoryScanner {
     }
 
 
+    /**
+     * Extends player profile data with measurement units
+     * @param {Object} playerData - The player data object to extend
+     * @param {Object} playerData.units - Units object that will be added to player data
+     * @param {string} playerData.units.height - Unit for height measurement (cm)
+     * @param {string} playerData.units.maxhr - Unit for max heart rate measurement (bpm)
+     */
     extendPlayerProfileData(playerData) {
         //
-
         playerData.units = {
             height: 'cm',
             maxhr: 'bpm',
         }
-
     }
 
 
