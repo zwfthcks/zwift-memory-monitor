@@ -1,6 +1,6 @@
-const ZwiftMemoryMonitor = require('../index.js');
+const ZwiftMemoryMonitor = require('../../index.js');
 
-const lookupPatterns = require('../lookup.js')
+const lookupPatterns = require('../../lookup.js')
 
 const zmm = new ZwiftMemoryMonitor(
   {

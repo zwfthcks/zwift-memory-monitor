@@ -2,18 +2,25 @@ const ZwiftMemoryMonitor = require('../index.js');
 
 const zmm = new ZwiftMemoryMonitor(
     {
-        log: console.log,
+        // log: console.log,
+        // retry: false,
         retry: true,
+        zwift: {
+            exe: 'testapp.exe',
+            // exe: 'testapp-does-not-exist.exe',
+            playerId: 0, // will cause an error if <player> pattern is used
+        }
+        
     }
 )
 
 const dataSeen = new Map();
 
 zmm.on('data', (playerdata) => {
-    if (!dataSeen.has(playerdata.packetInfo.type)) {
+    // if (!dataSeen.has(playerdata.packetInfo.type)) {
         dataSeen.set(playerdata.packetInfo.type, playerdata);
         console.log('>> ', playerdata.packetInfo.type, playerdata);
-    }
+    // }
 })
 
 zmm.on('status.started', (type) => {
@@ -52,13 +59,16 @@ zmm.on('status.scanning', () => {
 
 zmm.once('ready', () => {
     try {
-        zmm.loadPatterns(['playerstate', 'playerprofile'])
+        zmm.loadPatterns(['testappHit'])
+        // zmm.loadPatterns(['testappMiss'])
+        // zmm.loadPatterns(['testappFailNoPlayer'])
     } catch (e) {
         console.log('>>', 'error in zmm.loadPatterns(): ', e, zmm.lasterror)
     }
 
     try {
-        zmm.start(['playerstate', 'playerprofile'])
+        zmm.start(['testapp'], {forceScan: true})
+        // zmm.start(['testapp'], {forceScan: false})
         console.log('>>', 'last error:', zmm.lasterror)
     } catch (e) {
         console.log('>>', 'error in zmm.start(): ', e, zmm.lasterror)

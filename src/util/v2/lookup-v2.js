@@ -1,16 +1,13 @@
 // lookup table with version specific configuration
 
-// each export is a named pattern 
-
 // Each entry is an array of lookup pattern objects
 // Each lookup pattern object must have three keys:
 // versions (semver string), offsets, signatures
 
-const patterns = 
+module.exports =
 {
-    playerstate: [
+    playerstateHeuristic: [
         {
-            type: 'playerstate',
             // version: version numbers matching the pattern and positions
             versions: ">=1.65.0",
             // offsets: field configuration
@@ -48,28 +45,18 @@ const patterns =
             signatures: [
                 {
                     pattern: '<player> 00 00 00 00',
-                    rules: {
-                        mustRepeatAt: {
-                            min: 8 + 20 * 4,
-                            max: 8 + 36 * 4,
-                        },
-                        mustBeVariable: [
-                            // [0x48, 'uint32', '<sport>'], // offset, type, variable
-                            [0x108, 'uint32', '<world>'], // offset, type, variable
-                        ],
+                    heuristic: {
+                        min: 8 + 20 * 4,
+                        max: 8 + 36 * 4,
                         mustMatch: [],
                         mustDiffer: [8],
                         mustBeGreaterThanEqual: {
                             power: [0x34, 'uint32', 0], // offset, type, value
                             heartrate: [0x30, 'uint32', 0], // offset, type, value
-                            speed: [0x1c, 'uint32', 0], // offset, type, value
-                            cadence_uHz: [0x28, 'uint32', 0], // offset, type, value
                         },
                         mustBeLessThanEqual: {
                             power: [0x34, 'uint32', 2000], // offset, type, value
                             heartrate: [0x30, 'uint32', 300], // offset, type, value
-                            speed: [0x1c, 'uint32', 100 * 1000 * 1000], // offset, type, value
-                            cadence_uHz: [0x28, 'uint32', 150 * 1000000 / 60], // offset, type, value
                         },
                         
                     },
@@ -79,7 +66,7 @@ const patterns =
         },
     ],
     
-    playerstateOld: [
+    playerstate: [
         {
             // version: version numbers matching the pattern and positions
             versions: ">=1.65.0",
@@ -395,87 +382,27 @@ const patterns =
     
     playerprofile: [
         {
-            type: 'playerprofile',
             versions: "*",
             offsets: {
                 weight: [4*4, 'uint32'], // g
                 ftp: [5*4, 'uint32'], // W
                 bodyType: [7*4, 'uint32'], // 
-                flag: [34 * 4, 'uint32'], //
                 height: [42*4, 'uint32'], // mm
                 maxhr: [43*4, 'uint32'], // bpm
                 drops: [45*4, 'uint32'], // 
                 achievementLevel: [46*4, 'uint32'], // 
-                age: [51 * 4, 'uint32'], // 
+                age: [51*4, 'uint32'], // 
             },
             signatures: [
                 {
-                    // pattern: '<player> 00 00 00 00 ' + Array(7*4).fill('? ? ? ?').join(' ') + ' <flag>',
-                    pattern: '<player> 00 00 00 00 ',
-                    rules: {
-                        mustBeVariable: [
-                            [ 34 * 4, 'uint32', '<flag>' ],
-                        ]
-                    },
-                    addressOffset: 0
+                    start: '00 00 00 00 00 00 00 00',
+                    // end: '00 00 00 00 ? 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
+                    end: '00 00 00 00 00 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
+                    // end: '00 00 00 00 01 00 00 00 00 00 00 00',
+                    addressOffset: 8
                 }
             ],
         },
         
-    ],
-
-    testappHit: [
-        {
-            type: 'testapp',
-            versions: "*",
-            offsets: {
-                test: [8, 'uint32'],
-                zero: [12, 'uint32'],
-            },
-            signatures: [
-                {
-                    pattern: '54 45 53 54 41 50 50 21',
-                    rules: {},
-                    addressOffset: 0
-                }
-            ],
-        }
-    ],
-    testappMiss: [
-        {
-            type: 'testapp',
-            versions: "*",
-            offsets: {
-                test: [8, 'uint32'],
-                zero: [12, 'uint32'],
-            },
-            signatures: [
-                {
-                    pattern: '54 45 53 54 41 50 50 22',
-                    rules: {},
-                    addressOffset: 0
-                }
-            ],
-        }
-    ],
-    testappFailNoPlayer: [
-        {
-            type: 'testapp',
-            versions: "*",
-            offsets: {
-                test: [8, 'uint32'],
-                zero: [12, 'uint32'],
-            },
-            signatures: [
-                {
-                    pattern: '<player>',
-                    rules: {},
-                    addressOffset: 0
-                }
-            ],
-        }
     ]
 }
-
-
-module.exports = patterns;
