@@ -1,13 +1,16 @@
 // lookup table with version specific configuration
 
+// each export is a named pattern 
+
 // Each entry is an array of lookup pattern objects
 // Each lookup pattern object must have three keys:
 // versions (semver string), offsets, signatures
 
-module.exports =
+const patterns = 
 {
-    playerstateHeuristic: [
+    playerstate: [
         {
+            type: 'playerstate',
             // version: version numbers matching the pattern and positions
             versions: ">=1.65.0",
             // offsets: field configuration
@@ -45,18 +48,28 @@ module.exports =
             signatures: [
                 {
                     pattern: '<player> 00 00 00 00',
-                    heuristic: {
-                        min: 8 + 20 * 4,
-                        max: 8 + 36 * 4,
+                    rules: {
+                        mustRepeatAt: {
+                            min: 8 + 20 * 4,
+                            max: 8 + 36 * 4,
+                        },
+                        mustBeVariable: [
+                            // [0x48, 'uint32', '<sport>'], // offset, type, variable
+                            [0x108, 'uint32', '<world>'], // offset, type, variable
+                        ],
                         mustMatch: [],
                         mustDiffer: [8],
                         mustBeGreaterThanEqual: {
                             power: [0x34, 'uint32', 0], // offset, type, value
                             heartrate: [0x30, 'uint32', 0], // offset, type, value
+                            speed: [0x1c, 'uint32', 0], // offset, type, value
+                            cadence_uHz: [0x28, 'uint32', 0], // offset, type, value
                         },
                         mustBeLessThanEqual: {
                             power: [0x34, 'uint32', 2000], // offset, type, value
                             heartrate: [0x30, 'uint32', 300], // offset, type, value
+                            speed: [0x1c, 'uint32', 100 * 1000 * 1000], // offset, type, value
+                            cadence_uHz: [0x28, 'uint32', 150 * 1000000 / 60], // offset, type, value
                         },
                         
                     },
@@ -66,7 +79,7 @@ module.exports =
         },
     ],
     
-    playerstate: [
+    playerstateOld: [
         {
             // version: version numbers matching the pattern and positions
             versions: ">=1.65.0",
@@ -382,6 +395,7 @@ module.exports =
     
     playerprofile: [
         {
+            type: 'playerprofile',
             versions: "*",
             offsets: {
                 weight: [4*4, 'uint32'], // g
@@ -398,10 +412,10 @@ module.exports =
                 {
                     // pattern: '<player> 00 00 00 00 ' + Array(7*4).fill('? ? ? ?').join(' ') + ' <flag>',
                     pattern: '<player> 00 00 00 00 ',
-                    heuristic: {
-                        min: 34 * 4,
-                        max: 34 * 4,
-                        secondPattern: '<flag>',
+                    rules: {
+                        mustBeVariable: [
+                            [ 34 * 4, 'uint32', '<flag>' ],
+                        ]
                     },
                     addressOffset: 0
                 }
@@ -410,3 +424,6 @@ module.exports =
         
     ]
 }
+
+
+module.exports = patterns;
