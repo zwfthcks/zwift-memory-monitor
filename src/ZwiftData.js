@@ -133,30 +133,6 @@ class ZwiftData {
     }
 
 
-    //   this.log('Zwift log file:', this.logTxtPath)
-    //   if (fs.existsSync(this.logTxtPath)) {
-    //     try {
-    //       let logtxt = fs.readFileSync(this.logTxtPath, 'utf8');
-
-    //       // [15:56:28] Game Version: 1.26.1(101164) dda86fe0235debd7146c0d8ceb1b0d5d626ddf77
-    //       let patterns = {
-    //         version: /\[(?:[^\]]*)\]\s+Game Version: ((?:\d+)\.(?:\d+)\.(?:\d+))/g,
-    //       };
-
-    //       let match;
-
-    //       while ((match = patterns.version.exec(logtxt)) !== null) {
-    //         this.log(`Zwift seems to be version: ${match[1]}`);
-    //         // this.emit('info', `version ${match[1]}`);
-    //         return match[1];
-    //       }
-    //     } catch (error) {
-    //       this.log('Error reading Zwift log file', error);
-    //     }
-    //   }
-    // }
-
-
     getFlagId() {
         if ((this._flagId ?? undefined) !== undefined) {
             return this._flagId
@@ -185,33 +161,6 @@ class ZwiftData {
             }
         }
     }
-
-
-    // getPlayerId() {
-    //   // Determine player ID from log.txt
-    //   this.log('Zwift log file:', this.logTxtPath)
-    //   if (fs.existsSync(this.logTxtPath)) {
-    //     try {
-    //       let logtxt = fs.readFileSync(this.logTxtPath, 'utf8');
-
-    //       // [12:02:30] NETCLIENT:[INFO] Player ID: 793163
-    //       let patterns = {
-    //         user :    /\[(?:[^\]]*)\]\s+(?:NETCLIENT:){0,1}\[INFO\] Player ID: (\d*)/g ,
-    //       }
-
-    //       let match;
-
-    //       while ((match = patterns.user.exec(logtxt)) !== null) {
-    //         let playerid = parseInt(match[1]);
-    //         this.log(`Zwift seems to run with player ID: ${playerid} = ${('00000000' + playerid.toString(16)).substr(-8)}`)
-    //         // this.emit('info', `playerid ${playerid}`)
-    //         return playerid
-    //       }
-    //     } catch (error) {
-    //       this.log('Error reading Zwift log file', error);
-    //     }
-    //   } 
-    // }
 
     getPlayerId() {
         if ((this._playerId ?? undefined) !== undefined) {
