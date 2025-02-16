@@ -36,7 +36,8 @@ const { getDocumentsPath } = require('platform-paths');
 class ZwiftData {
     constructor(options = {}) {
 
-        this.log = options?.log || console.log
+        this.log = options?.log || (() => { })
+        this.logDebug = options?.logDebug || this.log
 
         this.exe = options?.exe || 'ZwiftApp.exe'
         this.appFolder = options?.appFolder || ''
@@ -126,13 +127,39 @@ class ZwiftData {
     closeProcess() {
         try {
             memoryjs.closeHandle(this._process.handle)
-            this._process = null
         } catch (e) {
             this.lasterror = 'Error in closeHandle'
-            throw new Error('Error in closeHandle', `${this.exe}`)
+            // throw new Error('Error in closeHandle', `${this.exe}`)
         }
         this._process = null
     }
+
+    /**
+     * Closes the handle to the Zwift process if the process running is not the same as the stored process
+     * @returns {boolean} True if the Zwift process is running, false otherwise
+     */
+    verifyProcess() {
+        if (this._process) {
+            try {
+                let isRunning = memoryjs.openProcess(this.exe)
+                // if (!isRunning) {
+                //     this.closeProcess()
+                // }
+                if (isRunning && isRunning.handle !== this._process?.handle) {
+                    this.closeProcess()
+                    return false
+                }
+                return !!isRunning
+            } catch (e) {
+                this.lasterror = 'Error in isProcessRunning'
+                // throw new Error('Error in isProcessRunning', `${this.exe}`)
+                this.closeProcess()
+                return false
+            }
+        }
+        return false
+    }
+
 
     /**
      * Gets the Zwift game version from cached value or files

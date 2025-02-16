@@ -64,9 +64,19 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this._patterns = new Map();
     this._patternAddressCache = new Map();
 
+    this.debug = this._options.debug ?? false
     // log can be set to e.g. console.log in options
-    this.log = this._options?.log || (() => { })
 
+    this.loglevel = this._options.loglevel ?? ((this._options.debug ?? false) ? 'DEBUG' : 'ERROR')
+    
+    this.log = this._options?.log || (() => { })
+    
+    if (this.loglevel === 'DEBUG') {
+      this.logDebug = this.log
+    } else {
+      this.logDebug = () => { }
+    }
+    
     // initial values
     this._started = false
 
@@ -87,6 +97,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
         }, 10_000);
       }
     })
+
+    let zwiftDataOptions = {
+      log: this.log,
+      logDebug: this.logDebug,
+      ...(this._options.zwift ?? {})
+    }
 
     this._zwift = new ZwiftData(this._options.zwift ?? null)
     this._zwift.init().then(() => {
@@ -125,9 +141,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
         })
       }
 
-      this.log('loaded patterns', patternIds)
+      this.logDebug('loaded patterns', patternIds)
       this.emit('status.loaded', patternIds)
-      this.emit('loaded', patternIds)
+      this.emit('loaded', this.loadedTypes)
 
     } catch (error) {
       throw new Error('error in loadPatterns', error)
@@ -148,9 +164,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     try {
       if (this._loadPattern(patternId)) {
-        this.log('loaded pattern', patternId)
+        this.logDebug('loaded pattern', patternId)
         this.emit('status.loaded', [patternId])
-        this.emit('loaded', [patternId])
+        this.emit('loaded', this.loadedTypes)
       } else {
         return false
       }
@@ -170,7 +186,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // set type to the value of the type property in the first object in the array, otherwise use the patternId
       const type = patternDefinitions[patternId][0]?.type ?? patternId
       this._patterns.set(type, patternDefinitions[patternId])
-      this.log('loaded pattern', patternId, 'as', type)
+      this.logDebug('loaded pattern', patternId, 'as', type)
     } catch (error) {
       throw new Error('error in _loadPattern', error)
     }
@@ -192,6 +208,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     if (!fetchPatternURL) {
       this.log('no fetchPatternURL')
       this.emit('status.error', 'no fetchPatternURL')
+      this.emit('error', 'no fetchPatternURL')
       throw new Error('no fetchPatternURL in loadURL')
     } else {
       fetch(fetchPatternURL, options)
@@ -200,7 +217,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
         })
         .catch()
         .then((data) => {
-          this.log(JSON.stringify(data, '', 2))
+          this.logDebug(JSON.stringify(data, '', 2))
 
           let type = data[0]?.type ?? null
           if (!type) {
@@ -212,7 +229,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
           this._patterns.set(type, data)
           this.emit('status.loaded', type)
-          this.emit('loaded', type)
+          this.emit('loaded', this.loadedTypes)
         })
         .catch()
     }
@@ -258,7 +275,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     this._started = false
 
-    this.emit('status.scanning')
+    this.emit('status.scanning', types)
 
     // if we don't have a process object, throw an error 
     if (!this._zwift.process) {
@@ -276,13 +293,15 @@ class ZwiftMemoryMonitor extends EventEmitter {
       }
     }
 
-    this.log('process', this._zwift.process)
+    
+    this._zwift.verifyProcess() // make sure that the process object is updated if necessary
+    this.logDebug('process', this._zwift.process)
 
     // this._addresses = {}
 
     let zwiftversion = this._zwift.version
 
-    this.log(this._patterns)
+    this.logDebug(this._patterns)
 
 
     // let scanners = new Map()
@@ -307,7 +326,6 @@ class ZwiftMemoryMonitor extends EventEmitter {
       }
     })
 
-
     this.scanners.forEach((scanner, type) => {
       scanner.start()
     })
@@ -328,11 +346,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
       scanner.stop()
     })
 
-    // close memory handle
-    // memoryjs.closeHandle(this._zwift.process.handle)
-
     try {
-      this._zwift.stopProcess()
+      this._zwift.closeProcess()
     } catch (e) {
       //
     }
@@ -340,7 +355,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this.emit('status.stopped')
 
     if (this._options?.keepalive && !fullStop) {
-      this._emit('status.retrying', this.lasterror)
+      this.emit('status.retrying', this.lasterror)
       this.start()
     }
 

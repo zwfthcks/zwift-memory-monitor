@@ -15,6 +15,7 @@ class ZwiftMemoryScanner {
         this._patternAddressCache = zmm._patternAddressCache
         this._zwift = zmm._zwift
         this.log = zmm.log
+        this.logDebug = zmm.logDebug
 
         this._lookup = lookup
         this._options = options
@@ -42,7 +43,7 @@ class ZwiftMemoryScanner {
 
     start() {
 
-        this.log('start', this._lookup.type)
+        this.logDebug('start', this._lookup.type)
 
         let forceScan = this._options.forceScan || false;
 
@@ -84,6 +85,18 @@ class ZwiftMemoryScanner {
             return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0)
         }
 
+
+        // verify that the zwift process is alive, otherwise emit an error and stop
+        if (this._zwift.process) {
+            this._zwift.verifyProcess()
+        }
+        if (!this._zwift.process) {
+            this.lasterror = 'Could not find a Zwift process'
+            this.zmm.emit('status.scanner.error', this._type, this.lasterror)
+            this.stop()
+            return
+        }
+
         
         let cachedScan = undefined;
 
@@ -101,7 +114,7 @@ class ZwiftMemoryScanner {
                 if (!signature.rules) return;
 
                 let pattern = replacePatternPlaceholders(signature.pattern)
-                this.log(pattern);
+                this.logDebug(pattern);
                 this._pattern = pattern
 
                 let mustBeVariable = signature?.rules?.mustBeVariable?.map((entry) => {
@@ -147,33 +160,40 @@ class ZwiftMemoryScanner {
      * @memberof ZwiftMemoryMonitor
      */
     _checkBaseAddress(error, address) {
-        this.log(error, address)
+        this.logDebug(error, address)
         if (error && !address) {
             this.lasterror = error
         }
 
         this._baseaddress = address
-        this.log(`base address: 0x${this._baseaddress.toString(16)}`);
+        this.logDebug(`base address: 0x${this._baseaddress.toString(16)}`);
 
-        if (this?._baseaddress) {
+        if (this?._baseaddress && this._zwift.process) {
             // verify by reading back from memory
-            const value = memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)
-            this.log(`value: ${value} = 0x${value.toString(16)}`);
+            try {
+                const value = memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)
+                this.logDebug(`value: ${value} = 0x${value.toString(16)}`);
 
-            // if (value != this._playerid) {
-            // if (value != this._patternFirst4Bytes) {
-            if (!this._pattern.startsWith(numberToPattern(value))) {
+                // if (value != this._playerid) {
+                // if (value != this._patternFirst4Bytes) {
+                if (!this._pattern.startsWith(numberToPattern(value))) {
+                    this._baseaddress = 0
+                    // this.lasterror = 'Could not verify player ID in memory'
+                    this.lasterror = 'Could not verify pattern in memory'
+                    this._deleteCachedScanFile()
+                } else {
+                    this._writeCachedScanFile({
+                        pattern: this._pattern,
+
+                        processObject: this._zwift.process,
+                        baseaddress: this._baseaddress
+                    })
+                }
+            } catch (error) {
                 this._baseaddress = 0
-                // this.lasterror = 'Could not verify player ID in memory'
-                this.lasterror = 'Could not verify pattern in memory'
+                this.lasterror = 'Could not read from memory'
+                this.log(this.lasterror, error)
                 this._deleteCachedScanFile()
-            } else {
-                this._writeCachedScanFile({
-                    pattern: this._pattern,
-
-                    processObject: this._zwift.process,
-                    baseaddress: this._baseaddress
-                })
             }
         }
 
@@ -212,7 +232,7 @@ class ZwiftMemoryScanner {
     _searchWithrulesSignature(processObject, pattern, rules, addressOffset, callback) {
         //
 
-        this.log('searchWithrulesSignature', pattern, rules, addressOffset)
+        this.logDebug('searchWithrulesSignature', pattern, rules, addressOffset)
 
         let foundAddresses = [];
         let hexPattern = pattern.split(' ').join('')
@@ -303,7 +323,7 @@ class ZwiftMemoryScanner {
 
         this._patternAddressCache.set(hexPattern, foundAddresses)
 
-        this.log('FOUND ADDRESSES:', foundAddresses.length)
+        this.logDebug('FOUND ADDRESSES:', foundAddresses.length)
 
         // loop through foundAddresses and calculate the offset between two adjacent elements
         let offsets = new Map();
@@ -319,7 +339,7 @@ class ZwiftMemoryScanner {
 
         foundAddresses.some((address) => {
 
-            this.log('CHECKING this address:', address)
+            this.logDebug('CHECKING this address:', address)
 
             let offset = offsets.get(address) ?? 0;
 
@@ -346,7 +366,7 @@ class ZwiftMemoryScanner {
                     return readValue == variable;
                 })
                 if (!isCandidate) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase(), '(failed mustBeVariable)')
+                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase(), '(failed mustBeVariable)')
                     return false;
                 }
             }
@@ -357,9 +377,9 @@ class ZwiftMemoryScanner {
                     return memoryjs.readMemory(processObject.handle, address - offset + mustMatchEntry, memoryjs.UINT32) ==
                         memoryjs.readMemory(processObject.handle, address + mustMatchEntry, memoryjs.UINT32)
                 })
-                this.log('match = ', match)
+                this.logDebug('match = ', match)
                 if (!match) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase())
+                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase())
                     return false;
                 }
             }
@@ -370,9 +390,9 @@ class ZwiftMemoryScanner {
                     return memoryjs.readMemory(processObject.handle, address - offset + mustDifferEntry, memoryjs.UINT32) !=
                         memoryjs.readMemory(processObject.handle, address + mustDifferEntry, memoryjs.UINT32)
                 })
-                this.log('differ = ', differ)
+                this.logDebug('differ = ', differ)
                 if (!differ) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase())
+                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase())
                     return false;
                 }
             }
@@ -392,9 +412,9 @@ class ZwiftMemoryScanner {
                     let readValue = memoryjs.readMemory(processObject.handle, address + offsetToRead, type);
                     return readValue >= value;
                 });
-                this.log('greaterThanEqual = ', greaterThanEqual);
+                this.logDebug('greaterThanEqual = ', greaterThanEqual);
                 if (!greaterThanEqual) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase());
+                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase());
                     return false;
                 }
             }
@@ -414,9 +434,9 @@ class ZwiftMemoryScanner {
                     let readValue = memoryjs.readMemory(processObject.handle, address + offsetToRead, type);
                     return readValue <= value;
                 });
-                this.log('lessThanEqual = ', lessThanEqual);
+                this.logDebug('lessThanEqual = ', lessThanEqual);
                 if (!lessThanEqual) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase());
+                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase());
                     return false;
                 }
             }
@@ -503,9 +523,9 @@ class ZwiftMemoryScanner {
 
                 this.zmm.emit('data', playerData)
 
-            } catch (e) {
+            } catch (error) {
                 // 
-                this.log(e)
+                this.log(error)
 
                 this.zmm.emit('status.scanner.error', this._type, error.message)
                 this.stop()
@@ -607,15 +627,20 @@ class ZwiftMemoryScanner {
 
         cachedScan = this._readCachedScanFile()
 
-        if (cachedScan) {
+        if (cachedScan && this._zwift.process) {
             // compare with the current Zwift process object:
-            if ((this._zwift.process.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
-                (this._zwift.process.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
-                (this._zwift.process.szExeFile !== cachedScan?.processObject?.szExeFile)) {
+            if ((this._zwift.process?.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
+                (this._zwift.process?.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
+                (this._zwift.process?.szExeFile !== cachedScan?.processObject?.szExeFile)) {
                 // Cached scan is not for the current process object so ignore and delete it
                 cachedScan = null
                 this._deleteCachedScanFile()
             }
+        }
+        if (!this._zwift.process) {
+            // no process object, so delete the cache
+            cachedScan = null
+            this._deleteCachedScanFile()
         }
 
         return cachedScan

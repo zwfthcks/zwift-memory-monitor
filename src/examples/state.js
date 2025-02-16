@@ -3,6 +3,8 @@ const ZwiftMemoryMonitor = require('../index.js');
 const zmm = new ZwiftMemoryMonitor(
     {
         log: console.log,
+        debug: true,
+        keepalive: true,    
         retry: true,
     }
 )
@@ -10,19 +12,24 @@ const zmm = new ZwiftMemoryMonitor(
 const dataSeen = new Map();
 
 zmm.on('data', (playerdata) => {
-    // if (!dataSeen.has(playerdata.packetInfo.type)) {
+    if (!dataSeen.has(playerdata.packetInfo.type)) {
         dataSeen.set(playerdata.packetInfo.type, playerdata);
         console.log('>> ', playerdata.packetInfo.type, playerdata);
-    // }
+    }
 })
+
+let timeoutAfter = 180_000;
 
 zmm.on('status.started', (type) => {
     console.log('>>','status.started', type)
+    dataSeen.delete(type)
 
-    // stop after 30 seconds 
-    setTimeout(() => {
-        zmm.stop()    
-    }, 30000);
+    if (timeoutAfter) {
+        setTimeout(() => {
+            zmm.stop()    
+        }, timeoutAfter);
+        timeoutAfter = 0;
+    }
 
 })
 
@@ -46,8 +53,8 @@ zmm.on('status.stopping', () => {
     console.log('>>','status.stopping')
 })
 
-zmm.on('status.scanning', () => {
-    console.log('>>','status.scanning')
+zmm.on('status.scanning', (...args) => {
+    console.log('>>','status.scanning', ...args)
 })
 
 zmm.once('ready', () => {
