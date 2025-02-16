@@ -62,8 +62,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     // - _worldId
   
     this._patterns = new Map();
-    this._patternAddressCache = new Map();
-
+  
     this.debug = this._options.debug ?? false
     // log can be set to e.g. console.log in options
 
@@ -357,9 +356,11 @@ class ZwiftMemoryMonitor extends EventEmitter {
     })
 
     try {
+      // this.logDebug('closing process', this._zwift._process)
+
       this._zwift.closeProcess()
     } catch (e) {
-      //
+      this.log('error in closeProcess()', e)
     }
 
     this.emit('status.stopped')

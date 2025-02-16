@@ -36,6 +36,9 @@ const { getDocumentsPath } = require('platform-paths');
 class ZwiftData {
     constructor(options = {}) {
 
+        this._patternAddressCache = new Map();
+
+
         this.log = options?.log || (() => { })
         this.logDebug = options?.logDebug || this.log
 
@@ -111,6 +114,8 @@ class ZwiftData {
     get process() {
 
         if (!this._process) {
+            this._patternAddressCache.clear()
+
             // Find the Zwift process
             try {
                 this._process = memoryjs.openProcess(this.exe);
@@ -143,6 +148,7 @@ class ZwiftData {
             // throw new Error('Error in closeHandle', `${this.exe}`)
         }
         this._process = null
+        this._patternAddressCache.clear()
     }
 
     /**

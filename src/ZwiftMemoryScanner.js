@@ -12,8 +12,8 @@ class ZwiftMemoryScanner {
 
         /** @type {Map} */
         this.zmm = zmm
-        this._patternAddressCache = zmm._patternAddressCache
         this._zwift = zmm._zwift
+        this._patternAddressCache = zmm._zwift._patternAddressCache
         this.log = zmm.log
         this.logDebug = zmm.logDebug
 
@@ -160,6 +160,7 @@ class ZwiftMemoryScanner {
      * @memberof ZwiftMemoryMonitor
      */
     _checkBaseAddress(error, address) {
+        // this.logDebug = console.log
         this.logDebug(error, address)
         if (error && !address) {
             this.lasterror = error
@@ -239,7 +240,13 @@ class ZwiftMemoryScanner {
 
         if (this._patternAddressCache.has(hexPattern)) {
             foundAddresses = this._patternAddressCache.get(hexPattern)
+        }
+        
+        if (foundAddresses.length > 0) {
+            this.logDebug('FOUND ADDRESSES (cached):', foundAddresses.length)
         } else {
+            this._patternAddressCache.delete(hexPattern)
+
             const regions = memoryjs.getRegions(processObject.handle);
 
             // Increased chunk size for fewer reads
@@ -321,7 +328,9 @@ class ZwiftMemoryScanner {
             return hexPattern == memoryjs.readBuffer(processObject.handle, address, hexPattern.length / 2).toString('hex')
         })
 
-        this._patternAddressCache.set(hexPattern, foundAddresses)
+        if (foundAddresses.length > 0) {
+            this._patternAddressCache.set(hexPattern, foundAddresses)
+        }
 
         this.logDebug('FOUND ADDRESSES:', foundAddresses.length)
 
