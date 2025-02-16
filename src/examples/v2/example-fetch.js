@@ -1,11 +1,12 @@
-const ZwiftMemoryMonitor = require('../index.js');
+const ZwiftMemoryMonitor = require('../../index.js');
 
 const zmm = new ZwiftMemoryMonitor(
     {
-    // zwiftapp: 'zwiftapp.exe'
         log: console.log
     }
 )
+
+console.log('last error:', zmm.lasterror)
 
 zmm.on('data', (playerState) => {
     console.log(playerState)
@@ -29,7 +30,8 @@ zmm.on('status.stopping', () => {
     console.log('status.stopping')
 })
 
-zmm.once('ready', () => {
+zmm.on('status.loaded', () => {
+    console.log('status.loaded')
     try {
         zmm.start()
     
@@ -40,3 +42,6 @@ zmm.once('ready', () => {
     }
 })
 
+zmm.once('ready', () => {
+    zmm.loadURL('https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/lookup-playerstateHeuristic.json', { cache: 'no-cache' })
+})

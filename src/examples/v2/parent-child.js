@@ -10,7 +10,7 @@ if (process.argv[2] === 'child') {
 function asChild() {
     
     const process = require('node:process')
-    const ZwiftMemoryMonitor = require('../index.js');
+    const ZwiftMemoryMonitor = require('../../index.js');
     
     const zmm = new ZwiftMemoryMonitor(
         // {

@@ -1,8 +1,8 @@
 # zwift-memory-monitor
 
-Works with Zwift version 1.29.1+
+Works with Zwift version 1.84+
 
-Last tested with: Zwift version 1.65.0
+Last tested with: Zwift version 1.84.0
 
 Windows only [^1].
 
@@ -13,6 +13,9 @@ Windows only [^1].
 npm install https://github.com/zwfthcks/zwift-memory-monitor
 `````
 
+v3 contains breaking changes. v2 can be installed from https://github.com/zwfthcks/zwift-memory-monitor#v2-branch
+
+
 In your code:
 
 `````
@@ -22,40 +25,184 @@ const zmm = new ZwiftMemoryMonitor();
 
 ZwiftMemoryMonitor is an EventEmitter.
 
-You have to listen for the 'ready' event and subsequently call the ```start``` method.
+You have to listen for the 'ready' event and subsequently call a ``load*`` method followed by ```start```.
 
-See also src/examples/example.js
+```
+const ZwiftMemoryMonitor = require('../index.js');
+
+const zmm = new ZwiftMemoryMonitor(
+    {
+        log: console.log,
+        retry: true,
+    }
+)
+
+zmm.on('data', (playerdata) => {
+    console.log('>> ', playerdata.packetInfo.type, playerdata);
+})
+
+zmm.on('status.started', (type) => {
+    console.log('>>','status.started', type)
+
+    // stop after 30 seconds 
+    setTimeout(() => {
+        zmm.stop()    
+    }, 30000);
+
+})
+
+zmm.on('status.retrying', (msg) => {
+    console.log('>>','status.retrying', msg)
+})
+
+zmm.on('status.stopped', (type) => {
+    console.log('>>','status.stopped', type)
+})
+
+zmm.on('status.scanner.started', (type) => {
+    console.log('>>','status.scanner.started', type)
+})
+
+zmm.on('status.scanner.stopped', (type) => {
+    console.log('>>','status.scanner.stopped', type)
+})
+
+zmm.on('status.scanner.error', (type, error) => {
+    console.log('>>','status.scanner.error', type, error)
+})
+
+zmm.on('status.stopping', () => {
+    console.log('>>','status.stopping')
+})
+
+zmm.on('status.scanning', () => {
+    console.log('>>','status.scanning')
+})
+
+zmm.once('ready', () => {
+    try {
+        zmm.loadPatterns(['playerstate', 'playerprofile'])
+    } catch (e) {
+        console.log('>>', 'error in zmm.loadPatterns(): ', e, zmm.lasterror)
+    }
+
+    try {
+        zmm.start(['playerstate', 'playerprofile'])
+        console.log('>>', 'last error:', zmm.lasterror)
+    } catch (e) {
+        console.log('>>', 'error in zmm.start(): ', e, zmm.lasterror)
+    }
+})
+
+```
+
+
+See the full example in src/examples/state.js
+
 
 ## Pattern / signature files
 
-To avoid having to update the dependency just because the pattern/signature changes, fetch the pattern at run-time from
+To avoid having to update the dependency just because the pattern/signature changes, fetch the pattern at run-time with the ```loadURL```method:
 
+For playerstate from
+
+```
+https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/pattern-playerstate.json
+```
+
+
+For playerprofile from
+
+```
+https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/pattern-playerprofile.json
+```
+
+Example:
+
+```
+zmm.once('ready', () => {
+    try {
+        zmm.loadURL('https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/pattern-playerstate.json')
+        zmm.loadURL('https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/pattern-playerprofile.json')
+    } catch (e) {
+        console.log('>>', 'error in zmm.loadURL: ', e, zmm.lasterror)
+    }
+
+    try {
+        zmm.start(['playerstate', 'playerprofile'])
+        console.log('>>', 'last error:', zmm.lasterror)
+    } catch (e) {
+        console.log('>>', 'error in zmm.start(): ', e, zmm.lasterror)
+    }
+})
+```
+
+### v2 playerstate file
+
+The old v2 format json is still available at:
+
+```
 https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/lookup-playerstateHeuristic.json
+```
 
-See src/examples/example-fetch.js
+This URL is **deprecated** and the file will be removed from the main branch. Instead, refer to the v2-branch version:
 
-### Deprecation
+```
+https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@v2-branch/build/data/lookup-playerstateHeuristic.json
+```
 
-Previously the example fetched patterns from https://zwfthcks.github.io/data/lookup-playerstate.json. This is now *deprecated* and the GitHub pages will eventually be removed. Please update your code to use the jsDelivr link instead.
+
 
 
 ## Miscellaneous
 
 ### Calculated fields
 
+See ZwiftMemoryScanner.js for details.
+
+### playerstate
+
+
 - ```cadence``` (rpm) is calculated from ````cadence_uHz```` (uHz)
 - ````calories```` (kCal) is calculated from ````work```` (mWh)
+- ```roadtime``` is corrected to match roadtime values in route definitions
+- ``powerMeter``true/false showing if a power meter is present
+- ``companionApp`` true/false
+- ``forward``  true/false
+- ``uTurn``  true/false
+- ``rideons`` number of ride ons received
+- ``roadId`` 
+- ``isPortalRoad``  true/false
+- ``gradientScalePct`` 
 
+```
+units = {
+    distance: 'm',
+    elevation: 'm',
+    speed: 'mm/h',
+    power: 'W',
+    heartrate: 'bpm',
+    cadence: 'rpm',
+    calories: 'kcal',
+}
+```
+
+### playerinfo
+
+TBD :) 
 
 
 ## Supported
 
-- Node >=18
+- Node >=20
 
 
 ## Notes
 
 If zwiftapp.exe is elevated (as it typically will be right after an update) your process must also be elevated for openProcess to succeed.
+
+  
+  
 
 
 

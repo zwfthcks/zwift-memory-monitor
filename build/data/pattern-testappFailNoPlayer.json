@@ -1,0 +1,1 @@
+[{"type":"testapp","versions":"*","offsets":{"test":[8,"uint32"],"zero":[12,"uint32"]},"signatures":[{"pattern":"<player>","rules":{},"addressOffset":0}]}]

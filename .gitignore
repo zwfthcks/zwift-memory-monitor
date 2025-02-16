@@ -104,3 +104,6 @@ dist
 .tern-port
 .vscode/settings.json
 doc/~$mappings.xlsx
+
+testapp.exe
+zwiftapp.exe

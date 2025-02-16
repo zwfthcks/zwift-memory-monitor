@@ -12,6 +12,8 @@
     "example-lookup": "node src/examples/version-lookup.js",
     "example-profile": "node src/examples/profile-search.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build-v2-lookup": "node src/util/build-lookup.js",
+    "build-testapp": "bun build --compile ./src/util/testapp.js",
     "build-lookup": "node src/util/build-lookup.js"
   },
   "repository": {
