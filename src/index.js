@@ -127,6 +127,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
       this.log('loaded patterns', patternIds)
       this.emit('status.loaded', patternIds)
+      this.emit('loaded', patternIds)
 
     } catch (error) {
       throw new Error('error in loadPatterns', error)
@@ -149,6 +150,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       if (this._loadPattern(patternId)) {
         this.log('loaded pattern', patternId)
         this.emit('status.loaded', [patternId])
+        this.emit('loaded', [patternId])
       } else {
         return false
       }
@@ -210,6 +212,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
           this._patterns.set(type, data)
           this.emit('status.loaded', type)
+          this.emit('loaded', type)
         })
         .catch()
     }
@@ -240,6 +243,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       // retry: false,
       forceScan: false,
       timeout: 100,
+      debug: this._options.debug ?? false,
       ...startOptions
     }
 

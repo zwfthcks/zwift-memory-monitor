@@ -186,8 +186,11 @@ class ZwiftMemoryScanner {
 
             this._interval = setInterval(this.readPlayerData, this._options.timeout)
             this._started = true
-
             this.zmm.emit('status.started', this._type)
+
+            if (this._options.debug) {
+                this.zmm.emit('debug', { type: this._type, baseaddress: this._baseaddress, addresses: this._addresses, process: this._zwift.process })
+            }
 
         }
 

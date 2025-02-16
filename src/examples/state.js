@@ -10,10 +10,10 @@ const zmm = new ZwiftMemoryMonitor(
 const dataSeen = new Map();
 
 zmm.on('data', (playerdata) => {
-    if (!dataSeen.has(playerdata.packetInfo.type)) {
+    // if (!dataSeen.has(playerdata.packetInfo.type)) {
         dataSeen.set(playerdata.packetInfo.type, playerdata);
         console.log('>> ', playerdata.packetInfo.type, playerdata);
-    }
+    // }
 })
 
 zmm.on('status.started', (type) => {
