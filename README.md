@@ -59,6 +59,10 @@ zmm.on('status.stopped', (type) => {
     console.log('>>','status.stopped', type)
 })
 
+zmm.on('status.scanner.started', (type) => {
+    console.log('>>','status.scanner.started', type)
+})
+
 zmm.on('status.scanner.stopped', (type) => {
     console.log('>>','status.scanner.stopped', type)
 })

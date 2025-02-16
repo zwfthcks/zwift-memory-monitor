@@ -6,6 +6,9 @@ const zmm = new ZwiftMemoryMonitor(
         debug: true,
         keepalive: true,    
         retry: true,
+        zwift: {
+            // playerId: 55555,
+        }
     }
 )
 

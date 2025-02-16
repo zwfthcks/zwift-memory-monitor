@@ -137,7 +137,7 @@ class ZwiftMemoryScanner {
 
                 // search for the pattern in memory
                 this._searchWithrulesSignature(this._zwift.process, pattern, rules, addressOffset, this._checkBaseAddress)
-
+                
                 return this._started // will break iteration on first pattern found because this._started is set to true in _checkBaseAddress on success
 
             })
@@ -156,7 +156,7 @@ class ZwiftMemoryScanner {
      * Emits status.started on success
      * @param {*} error
      * @param {*} address
-     * @fires status.started
+     * @fires status.scanner.started
      * @memberof ZwiftMemoryMonitor
      */
     _checkBaseAddress(error, address) {
@@ -206,7 +206,7 @@ class ZwiftMemoryScanner {
 
             this._interval = setInterval(this.readPlayerData, this._options.timeout)
             this._started = true
-            this.zmm.emit('status.started', this._type)
+            this.zmm.emit('status.scanner.started', this._type)
 
             if (this._options.debug) {
                 this.zmm.emit('debug', { type: this._type, baseaddress: this._baseaddress, addresses: this._addresses, process: this._zwift.process })
@@ -451,11 +451,14 @@ class ZwiftMemoryScanner {
 
         })
 
-        this.log('WANTED ADDRESS and OFFSET:')
-        this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )` : '')
-
+        
         if (wantedAddress) {
+            this.log('WANTED ADDRESS and OFFSET:')
+            this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )` : '')
             callback(null, wantedAddress + addressOffset)
+        } else {
+            this.log('NO WANTED ADDRESS FOUND')
+            // callback('No wanted address found', null)
         }
 
     }

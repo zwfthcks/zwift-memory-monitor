@@ -326,9 +326,19 @@ class ZwiftMemoryMonitor extends EventEmitter {
       }
     })
 
+    let started = true
     this.scanners.forEach((scanner, type) => {
-      scanner.start()
+      started = started && scanner.start();
     })
+    // console.log('started', started)
+    if (!started) {
+      this.lasterror = 'Could not start scanner(s)'
+      this.emit('status.error', 'Could not start scanner(s)')
+      this.stop() // stop all scanners and retry if configured
+    } else {
+      this._started = true
+      this.emit('status.started', types)
+    }
 
     // // If configured in options then wait 10 seconds and try again
     // if (startOptions.retry && !this._started) {
@@ -356,7 +366,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     if (this._options?.keepalive && !fullStop) {
       this.emit('status.retrying', this.lasterror)
-      this.start()
+      setTimeout(() => {
+        this.start()
+      }, 10_000)
     }
 
 

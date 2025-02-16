@@ -51,8 +51,19 @@ class ZwiftData {
         this._playerId = options?.playerId
         this._sportId = options?.sportId
         this._worldId = options?.worldId
-
-        // find the path to %ProgramFiles(x86)%
+        console.log('ZwiftData.js')
+        console.log('this.exe:', this.exe)
+        console.log('this.appFolder:', this.appFolder)
+        console.log('this.zwiftVerCurFilenameTxtPath:', this.zwiftVerCurFilenameTxtPath)
+        console.log('this.logTxtPath:', this.logTxtPath)
+        console.log('this.prefsXmlPath:', this.prefsXmlPath)
+        console.log('this._version:', this._version)
+        console.log('this._flagId:', this._flagId)
+        console.log('this._playerId:', this._playerId)
+        console.log('this._sportId:', this._sportId)
+        console.log('this._worldId:', this._worldId)
+        // find
+        //  the path to %ProgramFiles(x86)%
 
         if (!this.appFolder) {
             try {
