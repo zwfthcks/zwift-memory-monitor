@@ -163,7 +163,12 @@ class ZwiftData {
                 // if (!isRunning) {
                 //     this.closeProcess()
                 // }
-                if (isRunning && isRunning.handle !== this._process?.handle) {
+                if (isRunning && (
+                    (this.process?.th32ProcessID !== isRunning?.th32ProcessID) ||
+                    (this.process?.th32ParentProcessID !== isRunning?.th32ParentProcessID) ||
+                    (this.process?.szExeFile !== isRunning?.szExeFile)
+                )) {
+                    this.log('Zwift process changed from:', this.process, 'to:', isRunning)
                     this.closeProcess()
                     return false
                 }
