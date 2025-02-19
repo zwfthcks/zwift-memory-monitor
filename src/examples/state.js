@@ -68,7 +68,8 @@ zmm.once('ready', () => {
     }
 
     try {
-        zmm.start(['playerstate', 'playerprofile'])
+        // zmm.start(['playerstate', 'playerprofile'])
+        zmm.start(['playerstate'], { forceScan: true })
         console.log('>>', 'last error:', zmm.lasterror)
     } catch (e) {
         console.log('>>', 'error in zmm.start(): ', e, zmm.lasterror)

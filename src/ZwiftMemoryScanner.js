@@ -104,6 +104,8 @@ class ZwiftMemoryScanner {
 
         if (!forceScan) {
             cachedScan = this._getCachedScan()
+        } else {
+            this._deleteCachedScanFile()
         }
 
         if (cachedScan?.baseaddress && !forceScan) {
@@ -243,11 +245,14 @@ class ZwiftMemoryScanner {
         if (this._patternAddressCache.has(hexPattern)) {
             foundAddresses = this._patternAddressCache.get(hexPattern)
         }
+
+        const startTime = performance.now();
         
         if (foundAddresses.length > 0) {
             this.logDebug('FOUND ADDRESSES (cached):', foundAddresses.length)
         } else {
             this._patternAddressCache.delete(hexPattern)
+
 
             const regions = memoryjs.getRegions(processObject.handle);
 
@@ -258,9 +263,10 @@ class ZwiftMemoryScanner {
 
             // Pre-filter regions to only those we care about
             const validRegions = regions.filter(region =>
-                !region.szExeFile
-                && // Skip executable regions
+                !region.szExeFile && // Skip executable regions
                 region.RegionSize > 0 && // Skip empty regions
+                (region.State & 0x1000) && // MEM_COMMIT
+                (region.Type & 0x20000) && // MEM_PRIVATE
                 ((region.Protect & 0x02) || (region.Protect & 0x04)) // Only check readable and r/w regions (TODO: Confirm this is correct)
             );
 
@@ -318,12 +324,15 @@ class ZwiftMemoryScanner {
 
                     // < end of my original code
 
-
                     baseAddress += chunkSize - overlap;
                 }
             }
 
         }
+
+        const timeTakenFindAddresses = performance.now() - startTime;
+        this.logDebug('Time taken to find addresses:', timeTakenFindAddresses, 'ms')
+        const startTime2 = performance.now();
 
         // filter out duplicates and verify that the pattern still is at the found address
         foundAddresses = [...new Set(foundAddresses)].filter((address) => {
@@ -343,6 +352,10 @@ class ZwiftMemoryScanner {
             offsets.set(address, address - lastAddress)
             lastAddress = address;
         })
+
+        const timeTakenFilterAddresses = performance.now() - startTime2;
+        this.logDebug('Time taken to filter addresses:', timeTakenFilterAddresses, 'ms')
+        const startTime3 = performance.now();
 
         // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
         let wantedAddress = 0;
@@ -462,7 +475,9 @@ class ZwiftMemoryScanner {
 
         })
 
-        
+        const timeTakenCheckAddresses = performance.now() - startTime3;
+        this.logDebug('Time taken to check addresses:', timeTakenCheckAddresses, 'ms')
+
         if (wantedAddress) {
             this.log('WANTED ADDRESS and OFFSET:')
             this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )` : '')
