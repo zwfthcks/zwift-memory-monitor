@@ -66,10 +66,12 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this.debug = this._options.debug ?? false
     // log can be set to e.g. console.log in options
 
-    this.loglevel = this._options.loglevel ?? ((this._options.debug ?? false) ? 'DEBUG' : 'ERROR')
+    this.loglevel = this._options.loglevel ?? ((this._options.debug ?? false) ? 'DEBUG' : 'INFO')
     
     this.log = this._options?.log || (() => { })
     
+    this.log('Testing the log function in ZwiftMemoryMonitor')
+
     if (this.loglevel === 'DEBUG') {
       this.logDebug = this.log
     } else {
@@ -108,7 +110,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this._ready = true
       this.emit('ready')
     }).catch((error) => {
-      this.log('error in ZwiftData.init()', error)
+      this.log('Caught error in ZwiftData.init():', error)
       this.emit('error', error)
     })
 
@@ -145,7 +147,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this.emit('loaded', this.loadedTypes)
 
     } catch (error) {
-      throw new Error('error in loadPatterns', error)
+      throw new Error('Caught error in loadPatterns:', error)
     }
 
     return true;
@@ -170,7 +172,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
         return false
       }
     } catch (error) {
-      throw new Error('error in loadPattern', error)
+      throw new Error('Caught error in loadPattern:', error)
     }
 
     return true;
@@ -187,7 +189,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this._patterns.set(type, patternDefinitions[patternId])
       this.logDebug('loaded pattern', patternId, 'as', type)
     } catch (error) {
-      throw new Error('error in _loadPattern', error)
+      throw new Error('Caught error in _loadPattern:', error)
     }
   }
 
@@ -360,7 +362,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
       this._zwift.closeProcess()
     } catch (e) {
-      this.log('error in closeProcess()', e)
+      this.log('Caught error in closeProcess():', e)
     }
 
     this.emit('status.stopped')

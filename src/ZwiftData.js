@@ -42,6 +42,8 @@ class ZwiftData {
         this.log = options?.log || (() => { })
         this.logDebug = options?.logDebug || this.log
 
+        this.log('Testing the log function in ZwiftData')
+
         this.exe = options?.exe || 'ZwiftApp.exe'
         this.appFolder = options?.appFolder || ''
         this.zwiftVerCurFilenameTxtPath = options?.zwiftVerCurFilenameTxtPath || ''
@@ -54,26 +56,27 @@ class ZwiftData {
         this._playerId = options?.playerId
         this._sportId = options?.sportId
         this._worldId = options?.worldId
-        console.log('ZwiftData.js')
-        console.log('this.exe:', this.exe)
-        console.log('this.appFolder:', this.appFolder)
-        console.log('this.zwiftVerCurFilenameTxtPath:', this.zwiftVerCurFilenameTxtPath)
-        console.log('this.logTxtPath:', this.logTxtPath)
-        console.log('this.prefsXmlPath:', this.prefsXmlPath)
-        console.log('this._version:', this._version)
-        console.log('this._flagId:', this._flagId)
-        console.log('this._playerId:', this._playerId)
-        console.log('this._sportId:', this._sportId)
-        console.log('this._worldId:', this._worldId)
-        // find
-        //  the path to %ProgramFiles(x86)%
+
+        this.log('ZwiftData.js')
+        this.log('this.exe:', this.exe)
+        this.log('this.appFolder:', this.appFolder)
+        this.log('this.zwiftVerCurFilenameTxtPath:', this.zwiftVerCurFilenameTxtPath)
+        this.log('this.logTxtPath:', this.logTxtPath)
+        this.log('this.prefsXmlPath:', this.prefsXmlPath)
+        this.log('this._version:', this._version)
+        this.log('this._flagId:', this._flagId)
+        this.log('this._playerId:', this._playerId)
+        this.log('this._sportId:', this._sportId)
+        this.log('this._worldId:', this._worldId)
+        
+        // find the path to %ProgramFiles(x86)%
 
         if (!this.appFolder) {
             try {
                 let programFiles = process.env['ProgramFiles(x86)'] || process.env.ProgramFiles || 'C:\\Program Files (x86)';
                 this.appFolder = path.resolve(programFiles, 'Zwift')
             } catch (e) {
-                this.log('Error in finding Zwift app folder', e)
+                this.log('Caught error in finding Zwift app folder:', e)
             }
         }
 
@@ -231,7 +234,7 @@ class ZwiftData {
                 }
             } catch (e) {
                 // 
-                this.log('Error reading Zwift version file', e)
+                this.log('Caught error reading Zwift version file:', e)
             }
         }
 
@@ -274,7 +277,7 @@ class ZwiftData {
                     return flagid
                 }
             } catch (error) {
-                this.log('Error reading Zwift prefs.xml file', error);
+                this.log('Caught error reading Zwift prefs.xml file:', error);
             }
         }
     }
@@ -351,7 +354,7 @@ class ZwiftData {
 
                 return result;
             } catch (error) {
-                this.log('Error reading Zwift log file', error);
+                this.log('Caught error reading Zwift log file:', error);
             }
         }
     }

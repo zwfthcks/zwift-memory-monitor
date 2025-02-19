@@ -17,6 +17,8 @@ class ZwiftMemoryScanner {
         this.log = zmm.log
         this.logDebug = zmm.logDebug
 
+        this.log('Testing the log function in ZwiftMemoryScanner')
+
         this._lookup = lookup
         this._options = options
 
@@ -537,7 +539,7 @@ class ZwiftMemoryScanner {
 
             } catch (error) {
                 // 
-                this.log(error)
+                this.log('Caught this error:', error)
 
                 this.zmm.emit('status.scanner.error', this._type, error.message)
                 this.stop()
