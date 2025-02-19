@@ -103,7 +103,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       ...(this._options.zwift ?? {})
     }
 
-    this._zwift = new ZwiftData(this._options.zwift ?? null)
+    this._zwift = new ZwiftData(zwiftDataOptions ?? null)
     this._zwift.init().then(() => {
       this._ready = true
       this.emit('ready')
