@@ -280,16 +280,16 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     // if we don't have a process object, throw an error 
     if (!this._zwift.process) {
-      this.log('Could not find a Zwift process')
-      this.emit('status.error', 'Could not find a Zwift process')
-
+      
       if (this._options.retry) {
-        this.emit('status.retrying', 'Could not find a Zwift process')
+        this.emit('status.retrying', 'Could not find a Zwift process. Tries again in 10 seconds')
         setTimeout(() => {
           this.start(types, startOptions)
         }, 10_000);
         return;
       } else {
+        this.log('Could not find a Zwift process')
+        this.emit('status.error', 'Could not find a Zwift process')
         throw new Error('Could not find Zwift process')
       }
     }
