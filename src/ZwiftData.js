@@ -119,6 +119,7 @@ class ZwiftData {
             // Find the Zwift process
             try {
                 this._process = memoryjs.openProcess(this.exe);
+                this.log('Zwift process:', this._process)
             } catch (e) {
                 this.lasterror = 'Error in openProcess'
                 // throw new Error('Error in openProcess', `${this.exe}`)
