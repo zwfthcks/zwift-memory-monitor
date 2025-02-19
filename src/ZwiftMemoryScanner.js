@@ -492,8 +492,7 @@ class ZwiftMemoryScanner {
     /**
      *
      *
-     * @fires status.stopped
-     * @fires status.retrying
+     * @fires scanner.status.stopped
      * @memberof ZwiftMemoryScanner
      */
     stop() {

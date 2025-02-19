@@ -370,7 +370,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     if (this._options?.keepalive && !fullStop) {
       this.emit('status.retrying', this.lasterror)
       setTimeout(() => {
-        this.start()
+        this.start(this._savedStartParam.types ?? null, this._savedStartParam.startOptions ?? {})
       }, 10_000)
     }
 
