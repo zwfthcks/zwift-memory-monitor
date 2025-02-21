@@ -87,6 +87,7 @@ const patterns =
                 weight: [4*4, 'uint32'], // g
                 ftp: [5*4, 'uint32'], // W
                 bodyType: [7*4, 'uint32'], // 
+                jersey: [15*4, 'uint32'], //
                 flag: [34 * 4, 'uint32'], //
                 height: [42*4, 'uint32'], // mm
                 maxhr: [43*4, 'uint32'], // bpm
@@ -100,7 +101,7 @@ const patterns =
                     pattern: '<player> 00 00 00 00 ',
                     rules: {
                         mustBeVariable: [
-                            [ 34 * 4, 'uint32', '<flag>' ],
+                            [ 15 * 4, 'uint32', '<jersey>' ],
                         ]
                     },
                     addressOffset: 0

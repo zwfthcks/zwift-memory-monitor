@@ -301,6 +301,24 @@ class ZwiftData {
     }
 
     /**
+     * Gets the jersey ID from log file
+     * @returns {number|undefined} The jersey ID or undefined if not found
+     */
+    getJerseyId() {
+        if ((this._jerseyId ?? undefined) !== undefined) {
+            return this._jerseyId
+        }
+        // [17:53:29] [Garage Last Selected] Player Profile Update for Cycling Jersey set 872957794
+        const jersey = /\[(?:[^\]]*)\]\s+.*Player Profile Update for Cycling Jersey set (\d*)/g;
+        let found = this._getLast(jersey, 1)
+        if (found) {
+            let jerseyId = parseInt(found);
+            this.log(`Zwift seems to run with jersey ID: ${jerseyId} = ${('00000000' + jerseyId.toString(16)).substr(-8)}`)
+            return jerseyId
+        }
+    }
+
+    /**
      * Gets the current sport ID from log file
      * @returns {number} The sport ID (0 if not found)
      */

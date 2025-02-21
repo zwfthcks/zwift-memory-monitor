@@ -70,6 +70,9 @@ class ZwiftMemoryScanner {
                 return
             }
         }
+        if (hasPlaceholder(this._lookup, '<jersey>')) {
+            this._jerseyId = this._zwift.getJerseyId() || 0;
+        }
         if (hasPlaceholder(this._lookup, '<flag>')) {
             this._flagId = this._zwift.getFlagId() || 0;
         }
@@ -81,10 +84,10 @@ class ZwiftMemoryScanner {
         }
 
         const replacePatternPlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, numberToPattern(this._playerId ?? 0)).replace(/<flag>/ig, numberToPattern(this._flagId ?? 0)).replace(/<sport>/ig, numberToPattern(this._sportId ?? 0)).replace(/<world>/ig, numberToPattern(this._worldId ?? 0))
+            return (text ?? '').replace(/<player>/ig, numberToPattern(this._playerId ?? 0)).replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0)).replace(/<flag>/ig, numberToPattern(this._flagId ?? 0)).replace(/<sport>/ig, numberToPattern(this._sportId ?? 0)).replace(/<world>/ig, numberToPattern(this._worldId ?? 0))
         }
         const replaceValuePlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0)
+            return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<jersey>/ig, this._jerseyId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0)
         }
 
 
@@ -639,6 +642,7 @@ class ZwiftMemoryScanner {
         playerData.units = {
             height: 'cm',
             maxhr: 'bpm',
+            weight: 'g',
         }
     }
 
