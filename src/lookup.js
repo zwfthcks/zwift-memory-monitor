@@ -44,6 +44,18 @@ const patterns =
                 elevationScalePct: [0xbc, 'uint32'], // 50, 75, 100, 125
                 world: [0x108, 'uint32'],
             },
+            units: {
+                timestamp: 'ms',
+                distance: 'm',
+                elevation: 'm',
+                speed: 'mm/h',
+                power: 'W',
+                heartrate: 'bpm',
+                cadence_uHz: 'uHz',
+                time: 's',
+                work: 'mWh',
+                eventDistance: 'cm',
+            },
             // signatures: patterns to search for
             signatures: [
                 {
@@ -94,6 +106,12 @@ const patterns =
                 drops: [45*4, 'uint32'], // 
                 achievementLevel: [46*4, 'uint32'], // 
                 age: [51 * 4, 'uint32'], // 
+            },
+            units: {
+                weight: 'g',
+                ftp: 'W',
+                height: 'mm',
+                maxhr: 'bpm',
             },
             signatures: [
                 {

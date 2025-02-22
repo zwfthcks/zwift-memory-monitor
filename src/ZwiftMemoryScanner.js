@@ -530,6 +530,9 @@ class ZwiftMemoryScanner {
                 Object.keys(this._lookup.offsets).forEach((key) => {
                     playerData[key] = memoryjs.readMemory(this?._zwift.process?.handle, this._addresses[key][0], this._addresses[key][1])
                 })
+                if (this._lookup.units) {
+                    playerData.units = {...this._lookup.units}
+                }
 
                 // verify by reading first 4 bytes of pattern back from memory
                 if (!this._pattern.startsWith(numberToPattern(memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)))) {
@@ -538,11 +541,11 @@ class ZwiftMemoryScanner {
                     throw new Error(this.lasterror)
                 }
 
-                // if playerData has both f19 and f20, then we have a valid playerData object
+                // if playerData has both f19 and f20, then we have a valid playerstate object
                 if ((playerData.f19 ?? undefined) != undefined && (playerData.f20 ?? undefined) != undefined) {
                     this.extendPlayerStateData(playerData)
                 }
-                // if playerData has flag and age, then we have a valid playerData object
+                // if playerData has flag and age, then we have a valid playerprofile object
                 if ((playerData.flag ?? undefined) != undefined && (playerData.age ?? undefined) != undefined) {
                     this.extendPlayerProfileData(playerData)
                 }
@@ -618,13 +621,10 @@ class ZwiftMemoryScanner {
         playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
 
         playerData.units = {
-            distance: 'm',
-            elevation: 'm',
-            speed: 'mm/h',
-            power: 'W',
-            heartrate: 'bpm',
+            ...(playerData.units ?? {}),
             cadence: 'rpm',
             calories: 'kcal',
+            gradientScalePct: '%',
         }
 
     }
@@ -639,11 +639,9 @@ class ZwiftMemoryScanner {
      */
     extendPlayerProfileData(playerData) {
         //
-        playerData.units = {
-            height: 'cm',
-            maxhr: 'bpm',
-            weight: 'g',
-        }
+        // playerData.units = {
+        //     ...(playerData.units ?? {}),
+        // }
     }
 
 
