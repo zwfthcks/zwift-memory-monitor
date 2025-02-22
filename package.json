@@ -14,7 +14,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-v2-lookup": "node src/util/build-lookup.js",
     "build-testapp": "bun build --compile ./src/util/testapp.js",
-    "build-lookup": "node src/util/build-lookup.js"
+    "build-patterns": "node src/util/build-patterns.js"
   },
   "repository": {
     "type": "git",

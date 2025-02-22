@@ -621,7 +621,20 @@ class ZwiftMemoryScanner {
         playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
 
         playerData.units = {
+            // fallback values
+            timestamp: 'ms',
+            distance: 'm',
+            elevation: 'm',
+            speed: 'mm/h',
+            power: 'W',
+            heartrate: 'bpm',
+            cadence_uHz: 'uHz',
+            time: 's',
+            work: 'mWh',
+            eventDistance: 'cm',
+            // values from lookup
             ...(playerData.units ?? {}),
+            // values for extended properties
             cadence: 'rpm',
             calories: 'kcal',
             gradientScalePct: '%',
@@ -639,9 +652,16 @@ class ZwiftMemoryScanner {
      */
     extendPlayerProfileData(playerData) {
         //
-        // playerData.units = {
-        //     ...(playerData.units ?? {}),
-        // }
+        playerData.units = {
+            // fallback values
+            weight: 'g',
+            ftp: 'W',
+            height: 'mm',
+            maxhr: 'bpm',
+            // values from lookup
+            ...(playerData.units ?? {}),
+            // values for extended properties: none
+        }
     }
 
 
