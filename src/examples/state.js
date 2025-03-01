@@ -69,8 +69,8 @@ zmm.once('ready', () => {
 
     try {
         // zmm.start(['playerstate'])
-        // zmm.start(['playerstate', 'playerprofile'])
-        zmm.start(['playerstate', 'playerprofile'], { forceScan: true })
+        zmm.start(['playerstate', 'playerprofile'])
+        // zmm.start(['playerstate', 'playerprofile'], { forceScan: true })
         // zmm.start(['playerstate'], { forceScan: true, multiPass: true,})
         // zmm.start(['playerstate'], { forceScan: true})
         // zmm.start(['playerprofile'], { forceScan: true })
