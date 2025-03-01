@@ -251,165 +251,16 @@ class ZwiftMemoryScanner {
 
       const startTime = performance.now();
 
-      if (foundAddresses.length > 0) {
-        this.logDebug("FOUND ADDRESSES (cached):", foundAddresses.length);
-      } else {
-        this._patternAddressCache.delete(hexPattern);
-
-        const regions = memoryjs.getRegions(processObject.handle);
-
-        // Increased chunk size for fewer reads
-        const chunkSize = 1024 * 1024 * 4; // 4MB chunks
-        const overlap = hexPattern.length / 2;
-        const patternLength = hexPattern.length / 2;
-
-        // Pre-filter regions to only those we care about
-        const validRegions = regions.filter(
-          (region) =>
-            !region.szExeFile && // Skip executable regions
-            region.RegionSize > 0 && // Skip empty regions
-            region.State & 0x1000 && // MEM_COMMIT
-            region.Type & 0x20000 && // MEM_PRIVATE
-            (region.Protect & 0x02 || region.Protect & 0x04) // Only check readable and r/w regions (TODO: Confirm this is correct)
-        );
-
-        // Buffer reuse to avoid allocation overhead
-        let regionBuffer;
-
-        for (const region of validRegions) {
-          // console.log(region.BaseAddress, region.RegionSize, region.AllocationProtect, region.Protect, region.Type, region.State, region.szExeFile)
-          // console.log(region)
-          let baseAddress = region.BaseAddress;
-          const endAddress = region.BaseAddress + region.RegionSize;
-
-          while (baseAddress < endAddress) {
-            const readSize = Math.min(chunkSize, endAddress - baseAddress);
-
-            try {
-              regionBuffer = memoryjs.readBuffer(
-                processObject.handle,
-                baseAddress,
-                readSize
-              );
-            } catch (e) {
-              // Skip failed reads
-              baseAddress += chunkSize - overlap;
-              continue;
-            }
-
-            // code by copilot: >
-            // let patternIndex = 0;
-
-            // // Use while loop instead of do-while for better performance
-            // while ((patternIndex = regionBuffer.indexOf(hexPattern, patternIndex, 'hex')) !== -1) {
-            //   const address = baseAddress + patternIndex;
-
-            //   // Verify pattern at address
-            //   foundAddresses.push(address);
-
-            //   patternIndex += patternLength;
-            // }
-            // < end of code by copilot
-
-            // My original code: >
-            let patternIndex;
-            let byteOffset = 0;
-
-            do {
-              patternIndex = regionBuffer.indexOf(
-                hexPattern,
-                byteOffset,
-                "hex"
-              ); // the first occurrence of the pattern (if any)
-
-              if (patternIndex >= 0) {
-                let readBack = memoryjs
-                  .readBuffer(
-                    processObject.handle,
-                    baseAddress + patternIndex,
-                    hexPattern.length / 2
-                  )
-                  .toString("hex");
-                if (readBack == hexPattern) {
-                  foundAddresses.push(baseAddress + patternIndex);
-                }
-                byteOffset = patternIndex + patternLength + 1;
-              }
-            } while (patternIndex >= 0);
-
-            // < end of my original code
-
-            baseAddress += chunkSize - overlap;
-          }
-        }
-      }
-
-      const timeTakenFindAddresses = performance.now() - startTime;
-      this.logDebug(
-        "Time taken to find addresses:",
-        timeTakenFindAddresses,
-        "ms"
-      );
-      const startTime2 = performance.now();
-
-      // filter out duplicates and verify that the pattern still is at the found address
-      foundAddresses = [...new Set(foundAddresses)].filter((address) => {
-        return (
-          hexPattern ==
-          memoryjs
-            .readBuffer(processObject.handle, address, hexPattern.length / 2)
-            .toString("hex")
-        );
-      });
-
-      if (foundAddresses.length > 0) {
-        this._patternAddressCache.set(hexPattern, foundAddresses);
-      }
-
-      this.logDebug("FOUND ADDRESSES:", foundAddresses.length);
-
-      // loop through foundAddresses and calculate the offset between two adjacent elements
       let offsets = new Map();
       let lastAddress = 0;
-      foundAddresses.forEach((address) => {
-        offsets.set(address, address - lastAddress);
-        lastAddress = address;
-      });
 
-      const timeTakenFilterAddresses = performance.now() - startTime2;
-      this.logDebug(
-        "Time taken to filter addresses:",
-        timeTakenFilterAddresses,
-        "ms"
-      );
+      let runChecksEarly = !(this._options?.multiPass === true);
 
-      // environment variable to enable debug logging
-      if (process.env.ZMM_DEBUG) {
-        // for each address, output the 400 bytes starting at the address to the console as uint32 values, 8 per row
-        foundAddresses.forEach((address) => {
-          let buffer = memoryjs.readBuffer(processObject.handle, address, 400);
-          let view = new DataView(buffer.buffer);
-          let row = "";
-          for (let i = 0; i < 400; i += 4) {
-            if (i % 32 == 0) {
-              row =
-                "0x" +
-                (address + i).toString(16).toUpperCase().padStart(8, "0") +
-                ": ";
-            }
-            row += view.getUint32(i, true).toString().padStart(10) + " ";
-            if (i % 32 == 28) {
-              console.log(row);
-              row = "";
-            }
-          }
-          console.log("---");
-        });
-        //
-      }
+      // ------
 
-      const checkRules = (address) => {
-        this.logDebug("CHECKING this address:", address.toString(16).toUpperCase());
+      
+      const checkCheapRules = (address) => {
+        this.logDebug("CHECKING this address for cheap rules:", address.toString(16).toUpperCase());
 
         let offset = offsets.get(address) ?? 0;
 
@@ -419,7 +270,7 @@ class ZwiftMemoryScanner {
             offset <= (rules.mustRepeatAt.max ?? 0) &&
             offset % 4 == 0)
           ) {
-            this.log(
+            this.logDebug(
               "Not the wanted address:",
               address.toString(16).toUpperCase(),
               "(failed mustRepeatAt)"
@@ -427,6 +278,15 @@ class ZwiftMemoryScanner {
             return false;
           }
         }
+
+        return true;
+
+      }
+
+      const checkExpensiveRules = (address) => {
+        this.logDebug("CHECKING this address for expensive rules:", address.toString(16).toUpperCase());
+
+        let offset = offsets.get(address) ?? 0;
 
         if (rules.mustBeVariable && rules.mustBeVariable?.length > 0) {
           //   Example mustBeVariable: [
@@ -575,6 +435,189 @@ class ZwiftMemoryScanner {
 
       }
 
+      // ------
+
+
+
+
+      if (foundAddresses.length > 0) {
+        this.logDebug("FOUND ADDRESSES (cached):", foundAddresses.length);        
+      } else {
+        this._patternAddressCache.delete(hexPattern);
+
+        const regions = memoryjs.getRegions(processObject.handle);
+
+        // Increased chunk size for fewer reads
+        const chunkSize = 1024 * 1024 * 4; // 4MB chunks
+        const overlap = hexPattern.length / 2;
+        const patternLength = hexPattern.length / 2;
+
+        // Pre-filter regions to only those we care about
+        const validRegions = regions.filter(
+          (region) =>
+            !region.szExeFile && // Skip executable regions
+            region.RegionSize > 0 && // Skip empty regions
+            region.State & 0x1000 && // MEM_COMMIT
+            region.Type & 0x20000 && // MEM_PRIVATE
+            (region.Protect & 0x02 || region.Protect & 0x04) // Only check readable and r/w regions (TODO: Confirm this is correct)
+        );
+
+        // Buffer reuse to avoid allocation overhead
+        let regionBuffer;
+
+        for (const region of validRegions) {
+          // console.log(region.BaseAddress, region.RegionSize, region.AllocationProtect, region.Protect, region.Type, region.State, region.szExeFile)
+          // console.log(region)
+          let baseAddress = region.BaseAddress;
+          const endAddress = region.BaseAddress + region.RegionSize;
+
+          while (baseAddress < endAddress) {
+            const readSize = Math.min(chunkSize, endAddress - baseAddress);
+
+            try {
+              regionBuffer = memoryjs.readBuffer(
+                processObject.handle,
+                baseAddress,
+                readSize
+              );
+            } catch (e) {
+              // Skip failed reads
+              baseAddress += chunkSize - overlap;
+              continue;
+            }
+
+            // code by copilot: >
+            // let patternIndex = 0;
+
+            // // Use while loop instead of do-while for better performance
+            // while ((patternIndex = regionBuffer.indexOf(hexPattern, patternIndex, 'hex')) !== -1) {
+            //   const address = baseAddress + patternIndex;
+
+            //   // Verify pattern at address
+            //   foundAddresses.push(address);
+
+            //   patternIndex += patternLength;
+            // }
+            // < end of code by copilot
+
+            // My original code: >
+            let patternIndex;
+            let byteOffset = 0;
+
+            do {
+              patternIndex = regionBuffer.indexOf(
+                hexPattern,
+                byteOffset,
+                "hex"
+              ); // the first occurrence of the pattern (if any)
+
+              if (patternIndex >= 0) {
+                let readBack = memoryjs
+                  .readBuffer(
+                    processObject.handle,
+                    baseAddress + patternIndex,
+                    hexPattern.length / 2
+                  )
+                  .toString("hex");
+                if (readBack == hexPattern) {
+                  let address = baseAddress + patternIndex;
+                  foundAddresses.push(address);
+
+                  if (runChecksEarly) {
+                    offsets.set(address, address - lastAddress);
+                    lastAddress = address;
+                    this.logDebug('Running early check on:', address.toString(16).toUpperCase());
+                    if (checkCheapRules(address)) {
+                      if (checkExpensiveRules(address)) {
+                        this.log("FOUND early hit:", address.toString(16).toUpperCase());
+                        callback(null, address + addressOffset);
+                        return;
+                        
+                      }
+                    }
+                  }
+                }
+                byteOffset = patternIndex + patternLength + 1;
+              }
+            } while (patternIndex >= 0);
+
+            // < end of my original code
+
+            baseAddress += chunkSize - overlap;
+          }
+        }
+
+        // return now if we are running checks early although we did not find an early hit
+        if (runChecksEarly) return;
+      
+      }
+
+
+      const timeTakenFindAddresses = performance.now() - startTime;
+      this.logDebug(
+        "Time taken to find addresses:",
+        timeTakenFindAddresses,
+        "ms"
+      );
+      const startTime2 = performance.now();
+
+
+      // filter out duplicates 
+      foundAddresses = [...new Set(foundAddresses)];
+      
+      // verify that the pattern still is at the found address
+      foundAddresses = foundAddresses.filter((address) => {
+        return (
+          hexPattern ==
+          memoryjs
+            .readBuffer(processObject.handle, address, hexPattern.length / 2)
+            .toString("hex")
+        );
+      });
+
+      if (foundAddresses.length > 0) {
+        this._patternAddressCache.set(hexPattern, foundAddresses);
+      }
+
+      this.logDebug("FOUND ADDRESSES:", foundAddresses.length);
+
+      // // loop through foundAddresses and calculate the offset between two adjacent elements
+      // foundAddresses.forEach((address) => {
+      //   offsets.set(address, address - lastAddress);
+      //   lastAddress = address;
+      // });
+
+      const timeTakenFilterAddresses = performance.now() - startTime2;
+      this.logDebug(
+        "Time taken to filter addresses:",
+        timeTakenFilterAddresses,
+        "ms"
+      );
+
+      // environment variable to enable debug logging
+      if (process.env.ZMM_DEBUG) {
+        // for each address, output the 400 bytes starting at the address to the console as uint32 values, 8 per row
+        foundAddresses.forEach((address) => {
+          let buffer = memoryjs.readBuffer(processObject.handle, address, 400);
+          let view = new DataView(buffer.buffer);
+          let row = "";
+          for (let i = 0; i < 400; i += 4) {
+            if (i % 32 == 0) {
+              row =
+                "0x" +
+                (address + i).toString(16).toUpperCase().padStart(8, "0") +
+                ": ";
+            }
+            row += view.getUint32(i, true).toString().padStart(10) + " ";
+            if (i % 32 == 28) {
+              console.log(row);
+              row = "";
+            }
+          }
+          console.log("---");
+        });
+        //
+      }
 
       // environment variable to enable debug logging
       if (process.env.ZMM_DEBUG) {
@@ -582,7 +625,7 @@ class ZwiftMemoryScanner {
 
           foundAddresses.forEach((address) => {
             
-            if (checkRules(address)) {
+            if (checkCheapRules(address) && checkExpensiveRules(address)) {
               this.logDebug("PASSED checkRules:", "0x" + address.toString(16).toUpperCase().padStart(8, "0"));
             }
 
@@ -601,7 +644,7 @@ class ZwiftMemoryScanner {
  
       foundAddresses.some((address) => {
 
-        if (!checkRules(address)) {
+        if (!checkCheapRules(address) || !checkExpensiveRules(address)) {
             return false;   
         }
 

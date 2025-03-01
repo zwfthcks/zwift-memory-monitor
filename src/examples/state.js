@@ -8,7 +8,7 @@ const zmm = new ZwiftMemoryMonitor(
         retry: true,
         zwift: {
             // playerId: 55555,
-        }
+        },
     }
 )
 
@@ -68,9 +68,10 @@ zmm.once('ready', () => {
     }
 
     try {
-        zmm.start(['playerstate'])
+        // zmm.start(['playerstate'])
         // zmm.start(['playerstate', 'playerprofile'])
-        // zmm.start(['playerstate'], { forceScan: true })
+        // zmm.start(['playerstate'], { forceScan: true, multiPass: true,})
+        zmm.start(['playerstate'], { forceScan: true})
         // zmm.start(['playerprofile'], { forceScan: true })
         console.log('>>', 'last error:', zmm.lasterror)
     } catch (e) {
