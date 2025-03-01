@@ -238,258 +238,401 @@ class ZwiftMemoryScanner {
      * @returns {void}
      */
     _searchWithrulesSignature(processObject, pattern, rules, addressOffset, callback) {
-        //
+      //
 
-        this.logDebug('searchWithrulesSignature', pattern, rules, addressOffset)
+      this.logDebug("searchWithrulesSignature", pattern, rules, addressOffset);
 
-        let foundAddresses = [];
-        let hexPattern = pattern.split(' ').join('')
+      let foundAddresses = [];
+      let hexPattern = pattern.split(" ").join("");
 
-        if (this._patternAddressCache.has(hexPattern)) {
-            foundAddresses = this._patternAddressCache.get(hexPattern)
-        }
+      if (this._patternAddressCache.has(hexPattern)) {
+        foundAddresses = this._patternAddressCache.get(hexPattern);
+      }
 
-        const startTime = performance.now();
-        
-        if (foundAddresses.length > 0) {
-            this.logDebug('FOUND ADDRESSES (cached):', foundAddresses.length)
-        } else {
-            this._patternAddressCache.delete(hexPattern)
+      const startTime = performance.now();
 
+      if (foundAddresses.length > 0) {
+        this.logDebug("FOUND ADDRESSES (cached):", foundAddresses.length);
+      } else {
+        this._patternAddressCache.delete(hexPattern);
 
-            const regions = memoryjs.getRegions(processObject.handle);
+        const regions = memoryjs.getRegions(processObject.handle);
 
-            // Increased chunk size for fewer reads
-            const chunkSize = 1024 * 1024 * 4; // 4MB chunks
-            const overlap = hexPattern.length / 2;
-            const patternLength = hexPattern.length / 2;
+        // Increased chunk size for fewer reads
+        const chunkSize = 1024 * 1024 * 4; // 4MB chunks
+        const overlap = hexPattern.length / 2;
+        const patternLength = hexPattern.length / 2;
 
-            // Pre-filter regions to only those we care about
-            const validRegions = regions.filter(region =>
-                !region.szExeFile && // Skip executable regions
-                region.RegionSize > 0 && // Skip empty regions
-                (region.State & 0x1000) && // MEM_COMMIT
-                (region.Type & 0x20000) && // MEM_PRIVATE
-                ((region.Protect & 0x02) || (region.Protect & 0x04)) // Only check readable and r/w regions (TODO: Confirm this is correct)
-            );
+        // Pre-filter regions to only those we care about
+        const validRegions = regions.filter(
+          (region) =>
+            !region.szExeFile && // Skip executable regions
+            region.RegionSize > 0 && // Skip empty regions
+            region.State & 0x1000 && // MEM_COMMIT
+            region.Type & 0x20000 && // MEM_PRIVATE
+            (region.Protect & 0x02 || region.Protect & 0x04) // Only check readable and r/w regions (TODO: Confirm this is correct)
+        );
 
-            // Buffer reuse to avoid allocation overhead
-            let regionBuffer;
+        // Buffer reuse to avoid allocation overhead
+        let regionBuffer;
 
-            for (const region of validRegions) {
-                // console.log(region.BaseAddress, region.RegionSize, region.AllocationProtect, region.Protect, region.Type, region.State, region.szExeFile)
-                // console.log(region)
-                let baseAddress = region.BaseAddress;
-                const endAddress = region.BaseAddress + region.RegionSize;
+        for (const region of validRegions) {
+          // console.log(region.BaseAddress, region.RegionSize, region.AllocationProtect, region.Protect, region.Type, region.State, region.szExeFile)
+          // console.log(region)
+          let baseAddress = region.BaseAddress;
+          const endAddress = region.BaseAddress + region.RegionSize;
 
-                while (baseAddress < endAddress) {
-                    const readSize = Math.min(chunkSize, endAddress - baseAddress);
+          while (baseAddress < endAddress) {
+            const readSize = Math.min(chunkSize, endAddress - baseAddress);
 
-                    try {
-                        regionBuffer = memoryjs.readBuffer(processObject.handle, baseAddress, readSize);
-                    } catch (e) {
-                        // Skip failed reads
-                        baseAddress += chunkSize - overlap;
-                        continue;
-                    }
-
-                    // code by copilot: >
-                    // let patternIndex = 0;
-
-                    // // Use while loop instead of do-while for better performance
-                    // while ((patternIndex = regionBuffer.indexOf(hexPattern, patternIndex, 'hex')) !== -1) {
-                    //   const address = baseAddress + patternIndex;
-
-                    //   // Verify pattern at address
-                    //   foundAddresses.push(address);
-
-                    //   patternIndex += patternLength;
-                    // }
-                    // < end of code by copilot
-
-
-                    // My original code: >
-                    let patternIndex;
-                    let byteOffset = 0;
-
-                    do {
-                        patternIndex = regionBuffer.indexOf(hexPattern, byteOffset, 'hex');  // the first occurrence of the pattern (if any)
-
-                        if (patternIndex >= 0) {
-
-                            let readBack = memoryjs.readBuffer(processObject.handle, baseAddress + patternIndex, hexPattern.length / 2).toString('hex')
-                            if (readBack == hexPattern) {
-                                foundAddresses.push(baseAddress + patternIndex)
-                            }
-                            byteOffset = patternIndex + patternLength + 1
-                        }
-                    } while (patternIndex >= 0)
-
-                    // < end of my original code
-
-                    baseAddress += chunkSize - overlap;
-                }
+            try {
+              regionBuffer = memoryjs.readBuffer(
+                processObject.handle,
+                baseAddress,
+                readSize
+              );
+            } catch (e) {
+              // Skip failed reads
+              baseAddress += chunkSize - overlap;
+              continue;
             }
 
+            // code by copilot: >
+            // let patternIndex = 0;
+
+            // // Use while loop instead of do-while for better performance
+            // while ((patternIndex = regionBuffer.indexOf(hexPattern, patternIndex, 'hex')) !== -1) {
+            //   const address = baseAddress + patternIndex;
+
+            //   // Verify pattern at address
+            //   foundAddresses.push(address);
+
+            //   patternIndex += patternLength;
+            // }
+            // < end of code by copilot
+
+            // My original code: >
+            let patternIndex;
+            let byteOffset = 0;
+
+            do {
+              patternIndex = regionBuffer.indexOf(
+                hexPattern,
+                byteOffset,
+                "hex"
+              ); // the first occurrence of the pattern (if any)
+
+              if (patternIndex >= 0) {
+                let readBack = memoryjs
+                  .readBuffer(
+                    processObject.handle,
+                    baseAddress + patternIndex,
+                    hexPattern.length / 2
+                  )
+                  .toString("hex");
+                if (readBack == hexPattern) {
+                  foundAddresses.push(baseAddress + patternIndex);
+                }
+                byteOffset = patternIndex + patternLength + 1;
+              }
+            } while (patternIndex >= 0);
+
+            // < end of my original code
+
+            baseAddress += chunkSize - overlap;
+          }
         }
+      }
 
-        const timeTakenFindAddresses = performance.now() - startTime;
-        this.logDebug('Time taken to find addresses:', timeTakenFindAddresses, 'ms')
-        const startTime2 = performance.now();
+      const timeTakenFindAddresses = performance.now() - startTime;
+      this.logDebug(
+        "Time taken to find addresses:",
+        timeTakenFindAddresses,
+        "ms"
+      );
+      const startTime2 = performance.now();
 
-        // filter out duplicates and verify that the pattern still is at the found address
-        foundAddresses = [...new Set(foundAddresses)].filter((address) => {
-            return hexPattern == memoryjs.readBuffer(processObject.handle, address, hexPattern.length / 2).toString('hex')
-        })
+      // filter out duplicates and verify that the pattern still is at the found address
+      foundAddresses = [...new Set(foundAddresses)].filter((address) => {
+        return (
+          hexPattern ==
+          memoryjs
+            .readBuffer(processObject.handle, address, hexPattern.length / 2)
+            .toString("hex")
+        );
+      });
 
-        if (foundAddresses.length > 0) {
-            this._patternAddressCache.set(hexPattern, foundAddresses)
-        }
+      if (foundAddresses.length > 0) {
+        this._patternAddressCache.set(hexPattern, foundAddresses);
+      }
 
-        this.logDebug('FOUND ADDRESSES:', foundAddresses.length)
+      this.logDebug("FOUND ADDRESSES:", foundAddresses.length);
 
-        // loop through foundAddresses and calculate the offset between two adjacent elements
-        let offsets = new Map();
-        let lastAddress = 0;
+      // loop through foundAddresses and calculate the offset between two adjacent elements
+      let offsets = new Map();
+      let lastAddress = 0;
+      foundAddresses.forEach((address) => {
+        offsets.set(address, address - lastAddress);
+        lastAddress = address;
+      });
+
+      const timeTakenFilterAddresses = performance.now() - startTime2;
+      this.logDebug(
+        "Time taken to filter addresses:",
+        timeTakenFilterAddresses,
+        "ms"
+      );
+
+      // environment variable to enable debug logging
+      if (process.env.ZMM_DEBUG) {
+        // for each address, output the 400 bytes starting at the address to the console as uint32 values, 8 per row
         foundAddresses.forEach((address) => {
-            offsets.set(address, address - lastAddress)
-            lastAddress = address;
-        })
-
-        const timeTakenFilterAddresses = performance.now() - startTime2;
-        this.logDebug('Time taken to filter addresses:', timeTakenFilterAddresses, 'ms')
-        const startTime3 = performance.now();
-
-        // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
-        let wantedAddress = 0;
-        let wantedOffset;
-
-        foundAddresses.some((address) => {
-
-            this.logDebug('CHECKING this address:', address)
-
-            let offset = offsets.get(address) ?? 0;
-
-            if (rules.mustRepeatAt) {
-                if (!(offset >= (rules.mustRepeatAt.min ?? 0)) && (offset <= (rules.mustRepeatAt.max ?? 0) && offset % 4 == 0)) {
-                    this.log('Not the wanted address:', address.toString(16).toUpperCase(), '(failed mustRepeatAt)')
-                    return false
-                }
+          let buffer = memoryjs.readBuffer(processObject.handle, address, 400);
+          let view = new DataView(buffer.buffer);
+          let row = "";
+          for (let i = 0; i < 400; i += 4) {
+            if (i % 32 == 0) {
+              row =
+                "0x" +
+                (address + i).toString(16).toUpperCase().padStart(8, "0") +
+                ": ";
             }
-
-            if (rules.mustBeVariable && rules.mustBeVariable?.length > 0) {
-                //   Example mustBeVariable: [
-                //     [0x48, 'uint32', '<sport>'], // offset, type, variable
-                //     [0x108, 'uint32', '<world>'], // offset, type, variable
-                // ],
-                // return false if any of the entries in mustBeVariable fails to match
-
-                let isCandidate = rules.mustBeVariable.every((mustBeVariableEntry) => {
-                    let offsetToRead = mustBeVariableEntry[0];
-                    let type = mustBeVariableEntry[1];
-                    let variable = mustBeVariableEntry[2];
-
-                    let readValue = memoryjs.readMemory(processObject.handle, address + offsetToRead, type);
-                    return readValue == variable;
-                })
-                if (!isCandidate) {
-                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase(), '(failed mustBeVariable)')
-                    return false;
-                }
+            row += view.getUint32(i, true).toString().padStart(10) + " ";
+            if (i % 32 == 28) {
+              console.log(row);
+              row = "";
             }
+          }
+          console.log("---");
+        });
+        //
+      }
 
-            if (rules.mustMatch && rules.mustMatch?.length > 0) {
+      const checkRules = (address) => {
+        this.logDebug("CHECKING this address:", address.toString(16).toUpperCase());
 
-                let match = rules.mustMatch.every((mustMatchEntry) => {
-                    return memoryjs.readMemory(processObject.handle, address - offset + mustMatchEntry, memoryjs.UINT32) ==
-                        memoryjs.readMemory(processObject.handle, address + mustMatchEntry, memoryjs.UINT32)
-                })
-                this.logDebug('match = ', match)
-                if (!match) {
-                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase())
-                    return false;
-                }
-            }
+        let offset = offsets.get(address) ?? 0;
 
-            if (rules.mustDiffer && rules.mustDiffer?.length > 0) {
-
-                let differ = rules.mustDiffer.every((mustDifferEntry) => {
-                    return memoryjs.readMemory(processObject.handle, address - offset + mustDifferEntry, memoryjs.UINT32) !=
-                        memoryjs.readMemory(processObject.handle, address + mustDifferEntry, memoryjs.UINT32)
-                })
-                this.logDebug('differ = ', differ)
-                if (!differ) {
-                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase())
-                    return false;
-                }
-            }
-
-            if (rules.mustBeGreaterThanEqual) {
-                // Example mustBeGreaterThanEqual: {
-                //   power: [0x34, 'uint32', 0],
-                //   heartrate: [0x30, 'uint32', 0]
-                // },
-
-                // loop over the mustBeGreaterThanEqual object and check that the value at the address is greater than or equal to the value
-                let greaterThanEqual = Object.keys(rules.mustBeGreaterThanEqual).every((key) => {
-                    let value = rules.mustBeGreaterThanEqual[key][2];
-                    let type = rules.mustBeGreaterThanEqual[key][1];
-                    let offsetToRead = rules.mustBeGreaterThanEqual[key][0];
-
-                    let readValue = memoryjs.readMemory(processObject.handle, address + offsetToRead, type);
-                    return readValue >= value;
-                });
-                this.logDebug('greaterThanEqual = ', greaterThanEqual);
-                if (!greaterThanEqual) {
-                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase());
-                    return false;
-                }
-            }
-
-            if (rules.mustBeLessThanEqual) {
-                // Example mustBeLessThanEqual: {
-                //   power: [0x34, 'uint32', 0],
-                //   heartrate: [0x30, 'uint32', 0]
-                // },
-
-                // loop over the mustBeLessThanEqual object and check that the value at the address is greater than or equal to the value
-                let lessThanEqual = Object.keys(rules.mustBeLessThanEqual).every((key) => {
-                    let value = rules.mustBeLessThanEqual[key][2];
-                    let type = rules.mustBeLessThanEqual[key][1];
-                    let offsetToRead = rules.mustBeLessThanEqual[key][0];
-
-                    let readValue = memoryjs.readMemory(processObject.handle, address + offsetToRead, type);
-                    return readValue <= value;
-                });
-                this.logDebug('lessThanEqual = ', lessThanEqual);
-                if (!lessThanEqual) {
-                    this.logDebug('Not the wanted address:', address.toString(16).toUpperCase());
-                    return false;
-                }
-            }
-
-
-            // --
-            this.log('ALL CHECKS TRUE for', address.toString(16).toUpperCase())
-
-            wantedAddress = address;
-            wantedOffset = offset;
-            return true;
-
-        })
-
-        const timeTakenCheckAddresses = performance.now() - startTime3;
-        this.logDebug('Time taken to check addresses:', timeTakenCheckAddresses, 'ms')
-
-        if (wantedAddress) {
-            this.log('WANTED ADDRESS and OFFSET:')
-            this.log(wantedAddress.toString(16).toUpperCase(), wantedOffset ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )` : '')
-            callback(null, wantedAddress + addressOffset)
-        } else {
-            this.log('NO WANTED ADDRESS FOUND')
-            // callback('No wanted address found', null)
+        if (rules.mustRepeatAt) {
+          if (
+            !(offset >= (rules.mustRepeatAt.min ?? 0) &&
+            offset <= (rules.mustRepeatAt.max ?? 0) &&
+            offset % 4 == 0)
+          ) {
+            this.log(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase(),
+              "(failed mustRepeatAt)"
+            );
+            return false;
+          }
         }
 
+        if (rules.mustBeVariable && rules.mustBeVariable?.length > 0) {
+          //   Example mustBeVariable: [
+          //     [0x48, 'uint32', '<sport>'], // offset, type, variable
+          //     [0x108, 'uint32', '<world>'], // offset, type, variable
+          // ],
+          // return false if any of the entries in mustBeVariable fails to match
+
+          let isCandidate = rules.mustBeVariable.every(
+            (mustBeVariableEntry) => {
+              let offsetToRead = mustBeVariableEntry[0];
+              let type = mustBeVariableEntry[1];
+              let variable = mustBeVariableEntry[2];
+
+              let readValue = memoryjs.readMemory(
+                processObject.handle,
+                address + offsetToRead,
+                type
+              );
+              return readValue == variable;
+            }
+          );
+          if (!isCandidate) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase(),
+              "(failed mustBeVariable)"
+            );
+            return false;
+          }
+        }
+
+        if (rules.mustMatch && rules.mustMatch?.length > 0) {
+          let match = rules.mustMatch.every((mustMatchEntry) => {
+            return (
+              memoryjs.readMemory(
+                processObject.handle,
+                address - offset + mustMatchEntry,
+                memoryjs.UINT32
+              ) ==
+              memoryjs.readMemory(
+                processObject.handle,
+                address + mustMatchEntry,
+                memoryjs.UINT32
+              )
+            );
+          });
+          this.logDebug("match = ", match);
+          if (!match) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase()
+            );
+            return false;
+          }
+        }
+
+        if (rules.mustDiffer && rules.mustDiffer?.length > 0) {
+          let differ = rules.mustDiffer.every((mustDifferEntry) => {
+            return (
+              memoryjs.readMemory(
+                processObject.handle,
+                address - offset + mustDifferEntry,
+                memoryjs.UINT32
+              ) !=
+              memoryjs.readMemory(
+                processObject.handle,
+                address + mustDifferEntry,
+                memoryjs.UINT32
+              )
+            );
+          });
+          this.logDebug("differ = ", differ);
+          if (!differ) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase()
+            );
+            return false;
+          }
+        }
+
+        if (rules.mustBeGreaterThanEqual) {
+          // Example mustBeGreaterThanEqual: {
+          //   power: [0x34, 'uint32', 0],
+          //   heartrate: [0x30, 'uint32', 0]
+          // },
+
+          // loop over the mustBeGreaterThanEqual object and check that the value at the address is greater than or equal to the value
+          let greaterThanEqual = Object.keys(
+            rules.mustBeGreaterThanEqual
+          ).every((key) => {
+            let value = rules.mustBeGreaterThanEqual[key][2];
+            let type = rules.mustBeGreaterThanEqual[key][1];
+            let offsetToRead = rules.mustBeGreaterThanEqual[key][0];
+
+            let readValue = memoryjs.readMemory(
+              processObject.handle,
+              address + offsetToRead,
+              type
+            );
+            return readValue >= value;
+          });
+          this.logDebug("greaterThanEqual = ", greaterThanEqual);
+          if (!greaterThanEqual) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase()
+            );
+            return false;
+          }
+        }
+
+        if (rules.mustBeLessThanEqual) {
+          // Example mustBeLessThanEqual: {
+          //   power: [0x34, 'uint32', 0],
+          //   heartrate: [0x30, 'uint32', 0]
+          // },
+
+          // loop over the mustBeLessThanEqual object and check that the value at the address is greater than or equal to the value
+          let lessThanEqual = Object.keys(rules.mustBeLessThanEqual).every(
+            (key) => {
+              let value = rules.mustBeLessThanEqual[key][2];
+              let type = rules.mustBeLessThanEqual[key][1];
+              let offsetToRead = rules.mustBeLessThanEqual[key][0];
+
+              let readValue = memoryjs.readMemory(
+                processObject.handle,
+                address + offsetToRead,
+                type
+              );
+              return readValue <= value;
+            }
+          );
+          this.logDebug("lessThanEqual = ", lessThanEqual);
+          if (!lessThanEqual) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase()
+            );
+            return false;
+          }
+        }
+
+        return true;
+
+      }
+
+
+      // environment variable to enable debug logging
+      if (process.env.ZMM_DEBUG) {
+          this.logDebug("CHECKING rules for all addresses (DEBUG)");
+
+          foundAddresses.forEach((address) => {
+            
+            if (checkRules(address)) {
+              this.logDebug("PASSED checkRules:", "0x" + address.toString(16).toUpperCase().padStart(8, "0"));
+            }
+
+          });
+
+          this.logDebug('DONE checking rules for all adresses (DEBUG)')
+          //
+      }
+
+      const startTime3 = performance.now();
+
+      // the wanted address is the one that has offset approx. 120 (8 + 28*4) from the previous one
+      let wantedAddress = 0;
+      let wantedOffset;
+
+ 
+      foundAddresses.some((address) => {
+
+        if (!checkRules(address)) {
+            return false;   
+        }
+
+        // --
+        this.log("ALL CHECKS TRUE for", address.toString(16).toUpperCase());
+
+        wantedAddress = address;
+        wantedOffset = offsets.get(address) ?? 0;
+        return true;
+      });
+
+      const timeTakenCheckAddresses = performance.now() - startTime3;
+      this.logDebug(
+        "Time taken to check addresses:",
+        timeTakenCheckAddresses,
+        "ms"
+      );
+
+      if (wantedAddress) {
+        this.log("WANTED ADDRESS and OFFSET:");
+        this.log(
+          wantedAddress.toString(16).toUpperCase(),
+          wantedOffset
+            ? `${wantedOffset} ( = 8 + ${(wantedOffset - 8) / 4}*4 )`
+            : ""
+        );
+        callback(null, wantedAddress + addressOffset);
+      } else {
+        this.log("NO WANTED ADDRESS FOUND");
+        // callback('No wanted address found', null)
+      }
     }
 
     /**

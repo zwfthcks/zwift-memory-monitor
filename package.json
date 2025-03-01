@@ -4,7 +4,8 @@
   "description": "monitor Zwift memory and emit events for player state updates",
   "main": "src/index.js",
   "scripts": {
-    "example": "node src/examples/example.js",
+    "example": "node src/examples/state.js",
+    "zmm-debug-example": "cross-env ZMM_DEBUG=1 node src/examples/state.js",
     "example-force": "node src/examples/example-force.js",
     "example-retry": "node src/examples/retry-start.js",
     "example-fetch": "node src/examples/example-fetch.js",
@@ -39,6 +40,7 @@
     "semver": "^7.7.1"
   },
   "devDependencies": {
-    "ansi-escapes": "4.3.2"
+    "ansi-escapes": "4.3.2",
+    "cross-env": "^7.0.3"
   }
 }
