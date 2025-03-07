@@ -780,6 +780,18 @@ class ZwiftMemoryScanner {
      * @property {Object} playerData.units - Unit definitions for various measurements
      */
     extendPlayerStateData(playerData) {
+
+        if ((playerData?.timestamp) && (playerData.timestamp == (this._lastSeenTimestamp ?? 0))) {
+            if (this._lastSeenTimestampTime && Date.now() - this._lastSeenTimestampTime > 2*this._options.timeout) {
+              // if we have not seen a new timestamp in 2x the timeout, then we adjust the timestamp
+              playerData._timestamp = playerData.timestamp
+              playerData.timestamp = this._lastSeenTimestamp + (Date.now() - this._lastSeenTimestampTime)
+            }
+        } else {
+          this._lastSeenTimestamp = playerData.timestamp
+          this._lastSeenTimestampTime = Date.now()
+        }
+
         //
         if (playerData?.cadence_uHz >= 0) {
             playerData.cadence = Math.round(playerData?.cadence_uHz / 1000000 * 60)

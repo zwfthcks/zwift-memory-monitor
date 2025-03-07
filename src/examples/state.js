@@ -19,6 +19,7 @@ zmm.on('data', (playerdata) => {
         dataSeen.set(playerdata.packetInfo.type, playerdata);
         console.log('>> ', playerdata.packetInfo.type, playerdata);
     }
+    // console.log('>>', Date.now(), playerdata.timestamp, playerdata._timestamp ?? '')
 })
 
 let timeoutAfter = 180_000;
@@ -68,9 +69,10 @@ zmm.once('ready', () => {
     }
 
     try {
-        // zmm.start(['playerstate'])
-        zmm.start(['playerstate', 'playerprofile'])
+        zmm.start(['playerstate'])
+        // zmm.start(['playerstate', 'playerprofile'])
         // zmm.start(['playerstate', 'playerprofile'], { forceScan: true })
+        // zmm.start(['playerstate'], { timeout: 500,})
         // zmm.start(['playerstate'], { forceScan: true, multiPass: true,})
         // zmm.start(['playerstate'], { forceScan: true})
         // zmm.start(['playerprofile'], { forceScan: true })
