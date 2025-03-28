@@ -308,10 +308,11 @@ class ZwiftData {
         if ((this._jerseyId ?? undefined) !== undefined) {
             return this._jerseyId
         }
+        // [7:54:19] [Garage Last Selected] Player Profile Update set Jersey: 363655187, set Bike: 1029279076
         // [17:53:29] [Garage Last Selected] Player Profile Update for Cycling Jersey set 872957794
         // [12:46:00] DEBUG LEVEL: [Garage Last Selected] Jersey has been set 363655187
 
-        const jersey = /\[(?:[^\]]*)\]\s+.*Jersey (?:has been ){0,1}set (\d*)/g;
+        const jersey = /\[(?:[^\]]*)\]\s+.*(?:set Jersey: |Jersey (?:has been )?set )(\d+)/g;
         let found = this._getLast(jersey, 1)
         if (found) {
             let jerseyId = parseInt(found);
