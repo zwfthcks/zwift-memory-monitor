@@ -278,8 +278,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     this.emit('status.scanning', types)
 
-    this._zwift.verifyProcess() // make sure that the process object is nulled if outdated
-
+    
     // if we don't have a process object, throw an error 
     if (!this._zwift.process) {
       
@@ -295,7 +294,8 @@ class ZwiftMemoryMonitor extends EventEmitter {
         throw new Error('Could not find Zwift process')
       }
     }
-
+    
+    this._zwift.verifyProcess() // make sure that the process object is nulled if outdated
     this.logDebug('process', this._zwift.process)
 
     // this._addresses = {}
