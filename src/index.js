@@ -108,10 +108,14 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this._zwift = new ZwiftData(zwiftDataOptions ?? null)
     this._zwift.init().then(() => {
       this._ready = true
-      this.emit('ready')
+      process.nextTick(() => {
+        this.emit('ready')
+      })
     }).catch((error) => {
       this.log('Caught error in ZwiftData.init():', error)
-      this.emit('error', error)
+      process.nextTick(() => {
+        this.emit('error', error)
+      })
     })
 
   }
