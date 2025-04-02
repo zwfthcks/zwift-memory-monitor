@@ -1,4 +1,4 @@
-const ZwiftMemoryMonitor = require('../index.js');
+const ZwiftMemoryMonitor = require('../../index.js');
 
 const ansiEscapes = require('ansi-escapes');
 

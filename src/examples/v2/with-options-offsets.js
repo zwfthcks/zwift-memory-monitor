@@ -1,11 +1,11 @@
 // This demonstrates how offsets can be provided as options
 // The output here is also useful when verifying if the offsets from lookup.js are correct
 
-const ZwiftMemoryMonitor = require('../index.js');
+const ZwiftMemoryMonitor = require('../../index.js');
 
 const ansiEscapes = require('ansi-escapes');
 
-const lookupPatterns = require('../lookup.js')
+const lookupPatterns = require('../../lookup.js')
 
 // grab the first defined offsets for playerstate
 var offsets = { ...lookupPatterns['playerstateHeuristic'].shift().offsets }

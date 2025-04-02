@@ -1,4 +1,6 @@
-const ZwiftMemoryMonitor = require('../index.js');
+const ZwiftMemoryMonitor = require('../../index.js');
+
+const lookupPatterns = require('../../lookup.js')
 
 const zmm = new ZwiftMemoryMonitor(
   {
@@ -8,25 +10,7 @@ const zmm = new ZwiftMemoryMonitor(
     timeout: 4000,
     
     // a version based lookup table
-    lookup: [
-      {
-        versions: "*",
-        offsets: {
-          weight: [4*4, 'uint32'], // g
-          ftp: [5*4, 'uint32'], // W
-          height: [42*4, 'uint32'], // mm
-          maxhr: [43*4, 'uint32'], // bpm
-        },
-        signature: {
-          start: '00 00 00 00 00 00 00 00',
-          // end: '00 00 00 00 ? 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-          end: '00 00 00 00 00 00 00 00 00 00 00 00 ? ? ? 00 ? ? 00 00 00 00 00 00',
-          // end: '00 00 00 00 01 00 00 00 00 00 00 00',
-          addressOffset: 8
-        },
-      },
-      
-    ],
+    lookup: lookupPatterns['playerprofile'],
   }
   )
   
