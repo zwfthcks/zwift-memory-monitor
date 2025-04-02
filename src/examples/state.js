@@ -38,7 +38,7 @@ zmm.on('status.started', (type) => {
 })
 
 zmm.on('status.retrying', (msg) => {
-    console.log('>>','status.retrying', msg)
+    console.log('>>',Date.now(), 'status.retrying', msg)
 })
 
 zmm.on('status.stopped', (type) => {

@@ -211,7 +211,11 @@ class ZwiftMemoryScanner {
             })
 
             // this.log(this._addresses)
-
+            
+            if (this._interval) {
+                clearInterval(this._interval)
+                this._interval = null
+            }
             this._interval = setInterval(this.readPlayerData, this._options.timeout)
             this._started = true
             this.zmm.emit('status.scanner.started', this._type)
@@ -713,6 +717,14 @@ class ZwiftMemoryScanner {
 
         if (this._started) {
             try {
+
+                if (!this?._zwift.process?.th32ProcessID || !memoryjs.processExists(this._zwift.process.th32ProcessID)) {
+                    this.lasterror = `Zwift process not found (${this?._zwift.process?.th32ProcessID})`
+                    this.zmm.emit('status.scanner.error', this._type, this.lasterror)
+                    this.stop()
+                    return
+                }
+
                 Object.keys(this._lookup.offsets).forEach((key) => {
                     playerData[key] = memoryjs.readMemory(this?._zwift.process?.handle, this._addresses[key][0], this._addresses[key][1])
                 })

@@ -80,7 +80,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
     
     // initial values
     this._started = false
-
+    this._timeout = null
     this.scanners = new Map();
 
 
@@ -93,7 +93,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
       if (this._options.retry) {
         this.emit('status.retrying', 'Waits a bit and tries again')
-        setTimeout(() => {
+        if (this._timeout) { 
+          clearTimeout(this._timeout)
+        }
+        this._timeout = setTimeout(() => {
           this.start(this._savedStartParam.types ?? null, this._savedStartParam.startOptions ?? {})
         }, 10_000);
       }
@@ -289,7 +292,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
       
       if (this._options.retry) {
         this.emit('status.retrying', 'Could not find a Zwift process. Tries again in 10 seconds')
-        setTimeout(() => {
+        if (this._timeout) {
+          clearTimeout(this._timeout)
+        }
+        this._timeout = setTimeout(() => {
           this.start(types, startOptions)
         }, 10_000);
         return;
@@ -373,7 +379,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
 
     if (this._options?.keepalive && !fullStop) {
       this.emit('status.retrying', this.lasterror)
-      setTimeout(() => {
+      if (this._timeout) {
+        clearTimeout(this._timeout)
+      }
+      this._timeout = setTimeout(() => {
         this.start(this._savedStartParam.types ?? null, this._savedStartParam.startOptions ?? {})
       }, 10_000)
     }
