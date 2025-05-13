@@ -37,7 +37,7 @@
   "dependencies": {
     "memoryjs": "github:zwfthcks/memoryjs",
     "platform-paths": "^1.2.2",
-    "semver": "^7.7.1"
+    "semver": "^7.7.2"
   },
   "devDependencies": {
     "ansi-escapes": "4.3.2",
