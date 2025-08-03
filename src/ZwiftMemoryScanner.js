@@ -18,6 +18,7 @@ class ZwiftMemoryScanner {
         this.logDebug = zmm.logDebug
 
         this.log('Testing the log function in ZwiftMemoryScanner')
+        this.logDebug('Testing the logDebug function in ZwiftMemoryScanner')
 
         this._lookup = lookup
         this._options = options
