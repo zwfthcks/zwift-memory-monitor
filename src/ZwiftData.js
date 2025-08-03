@@ -43,6 +43,7 @@ class ZwiftData {
         this.logDebug = options?.logDebug || this.log
 
         this.log('Testing the log function in ZwiftData')
+        this.logDebug('Testing the logDebug function in ZwiftData')
 
         this.exe = options?.exe || 'ZwiftApp.exe'
         this.appFolder = options?.appFolder || ''

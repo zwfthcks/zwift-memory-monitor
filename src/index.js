@@ -63,6 +63,16 @@ class ZwiftMemoryMonitor extends EventEmitter {
   
     this._patterns = new Map();
   
+    // check if environment variable ZMM_DEBUG is set to true
+    if (process.env.ZMM_DEBUG && process.env.ZMM_DEBUG.toLowerCase() === 'true') {
+      this._options.debug = true
+      this._options.loglevel = 'DEBUG' // set log level to DEBUG
+    }
+    // check if environment variable ZMM_LOGLEVEL is set
+    if (process.env.ZMM_LOGLEVEL) {
+      this._options.loglevel = process.env.ZMM_LOGLEVEL.toUpperCase()
+    }
+
     this.debug = this._options.debug ?? false
     // log can be set to e.g. console.log in options
 
@@ -71,13 +81,15 @@ class ZwiftMemoryMonitor extends EventEmitter {
     this.log = this._options?.log || (() => { })
     
     this.log('Testing the log function in ZwiftMemoryMonitor')
-
+    
     if (this.loglevel === 'DEBUG') {
       this.logDebug = this.log
     } else {
       this.logDebug = () => { }
     }
     
+    this.log('Testing the logDebug function in ZwiftMemoryMonitor')
+
     // initial values
     this._started = false
     this._timeout = null
