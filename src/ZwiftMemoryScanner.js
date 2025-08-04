@@ -113,16 +113,20 @@ class ZwiftMemoryScanner {
         }
 
         if (cachedScan?.baseaddress && !forceScan) {
+            this.logDebug('Using cached scan with baseaddress:', cachedScan?.baseaddress)
             this._pattern = cachedScan.pattern
             this._checkBaseAddress(null, cachedScan.baseaddress)
         } else {
+            this.logDebug('Not using a cached scan')
             this._lookup.signatures.some((signature) => {
 
                 if (!signature.pattern) return;
                 if (!signature.rules) return;
 
+                this.logDebug('Searching for signature of type:', signature.type, 'with pattern:', signature.pattern)
+
                 let pattern = replacePatternPlaceholders(signature.pattern)
-                this.logDebug(pattern);
+                this.logDebug('Using replaced pattern:', pattern);
                 this._pattern = pattern
 
                 let mustBeVariable = signature?.rules?.mustBeVariable?.map((entry) => {
@@ -169,7 +173,7 @@ class ZwiftMemoryScanner {
      */
     _checkBaseAddress(error, address) {
         // this.logDebug = console.log
-        this.logDebug(error, address)
+        this.logDebug('_checkBaseAddress', error, address)
         if (error && !address) {
             this.lasterror = error
         }
@@ -894,13 +898,17 @@ class ZwiftMemoryScanner {
                 (this._zwift.process?.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
                 (this._zwift.process?.szExeFile !== cachedScan?.processObject?.szExeFile)) {
                 // Cached scan is not for the current process object so ignore and delete it
+                this.logDebug('Cached scan does not match current Zwift process, deleting cached scan file')
                 cachedScan = null
+                // delete cache
                 this._deleteCachedScanFile()
             }
         }
         if (!this._zwift.process) {
             // no process object, so delete the cache
+            this.logDebug('No Zwift process found, deleting cached scan file')
             cachedScan = null
+            // delete cache
             this._deleteCachedScanFile()
         }
 
@@ -915,7 +923,10 @@ class ZwiftMemoryScanner {
     _deleteCachedScanFile() {
         try {
             fs.rmSync(this._getCachedScanFileName())
-        } catch (e) { }
+            this.logDebug('Deleted cached scan file')
+        } catch (e) { 
+            this.logDebug('Caught (and ignored) error deleting cached scan file:', e)
+        }
     }
 
 
@@ -956,6 +967,10 @@ class ZwiftMemoryScanner {
                 this._deleteCachedScanFile()
             }
 
+        }
+
+        if (this._options?.debug) {
+            this.logDebug('_readCachedScanFile cached scan:', JSON.stringify(cachedScan))
         }
 
         return cachedScan
