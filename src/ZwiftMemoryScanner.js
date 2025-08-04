@@ -123,7 +123,7 @@ class ZwiftMemoryScanner {
                 if (!signature.pattern) return;
                 if (!signature.rules) return;
 
-                this.logDebug('Searching for signature of type:', signature.type, 'with pattern:', signature.pattern)
+                this.logDebug('Searching for signature with pattern:', signature.pattern)
 
                 let pattern = replacePatternPlaceholders(signature.pattern)
                 this.logDebug('Using replaced pattern:', pattern);
