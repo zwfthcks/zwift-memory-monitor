@@ -646,11 +646,11 @@ class ZwiftMemoryScanner {
             }
             row += view.getUint32(i, true).toString().padStart(10) + " ";
             if (i % 32 == 28) {
-              console.log(row);
+              this.logDebug(row);
               row = "";
             }
           }
-          console.log("---");
+          this.logDebug("---");
         });
         //
       }
