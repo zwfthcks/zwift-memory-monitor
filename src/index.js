@@ -88,7 +88,7 @@ class ZwiftMemoryMonitor extends EventEmitter {
       this.logDebug = () => { }
     }
     
-    this.log('Testing the logDebug function in ZwiftMemoryMonitor')
+    this.logDebug('Testing the logDebug function in ZwiftMemoryMonitor')
 
     // initial values
     this._started = false
