@@ -532,6 +532,30 @@ class ZwiftMemoryScanner {
                   let address = baseAddress + patternIndex;
                   foundAddresses.push(address);
 
+                  if (process.env.ZMM_DEBUG) {
+                    // for each address, output the 400 bytes starting at the address to the console as uint32 values, 8 per row
+                    
+                      let buffer = memoryjs.readBuffer(processObject.handle, address, 400);
+                      let view = new DataView(buffer.buffer);
+                      let row = "";
+                      for (let i = 0; i < 400; i += 4) {
+                        if (i % 32 == 0) {
+                          row =
+                            "0x" +
+                            (address + i).toString(16).toUpperCase().padStart(8, "0") +
+                            ": ";
+                        }
+                        row += view.getUint32(i, true).toString().padStart(10) + " ";
+                        if (i % 32 == 28) {
+                          this.logDebug(row);
+                          row = "";
+                        }
+                      }
+                      this.logDebug("---");
+                    
+                    //
+                  }
+                                    
                   if (runChecksEarly) {
                     offsets.set(address, address - lastAddress);
                     lastAddress = address;
@@ -557,7 +581,10 @@ class ZwiftMemoryScanner {
         }
 
         // return now if we are running checks early although we did not find an early hit
-        if (runChecksEarly) return;
+        if (runChecksEarly) {
+          this.logDebug('return now if we are running checks early although we did not find an early hit')
+          return;
+        }
       
       }
 
