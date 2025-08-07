@@ -18,6 +18,7 @@ const { getDocumentsPath } = require('platform-paths');
  * @property {number} _playerId - Cached player ID
  * @property {number} _sportId - Cached sport ID 
  * @property {number} _worldId - Cached world ID
+ * @property {number} _courseId - Cached course ID
  * @property {Object} _process - Cached process object
  * 
  * @param {Object} [options={}] - Configuration options
@@ -32,6 +33,7 @@ const { getDocumentsPath } = require('platform-paths');
  * @param {number} [options.playerId] - Override player ID
  * @param {number} [options.sportId] - Override sport ID
  * @param {number} [options.worldId] - Override world ID
+ * @param {number} [options.courseId] - Override course ID
  */
 class ZwiftData {
     constructor(options = {}) {
@@ -57,6 +59,7 @@ class ZwiftData {
         this._playerId = options?.playerId
         this._sportId = options?.sportId
         this._worldId = options?.worldId
+        this._courseId = options?.courseId
 
         this.log('ZwiftData.js')
         this.log('this.exe:', this.exe)
@@ -69,7 +72,8 @@ class ZwiftData {
         this.log('this._playerId:', this._playerId)
         this.log('this._sportId:', this._sportId)
         this.log('this._worldId:', this._worldId)
-        
+        this.log('this._courseId:', this._courseId)
+
         // find the path to %ProgramFiles(x86)%
 
         if (!this.appFolder) {
@@ -351,6 +355,29 @@ class ZwiftData {
         return worldId
     }
 
+
+    /**
+     * Gets the current course ID from the world ID found in the log file
+     * @returns {Promise<number>} The course ID (0 if not found)
+     */
+    getCourseId() {
+        if ((this._courseId ?? undefined) !== undefined) {
+            return this._courseId;
+        }
+        let worldId = this.getWorldId() || 0;
+        let courseId = 0;
+        if (worldId === 0) {
+            courseId = 6; // world 0 Default world
+        } else if (worldId === 1) {
+            courseId = 6; // world 1 Watopia
+        } else if (worldId === 2) {
+            courseId = 2; // world 2 Richmond
+        } else {
+            courseId = worldId + 4;
+        }
+        this.log(`Zwift seems to run on course ID: ${courseId} = ${('00000000' + courseId.toString(16)).substr(-8)}`);
+        return courseId;
+    }
 
     /**
      * Helper method to get the last matching item from a pattern in the log file

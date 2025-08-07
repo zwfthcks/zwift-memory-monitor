@@ -83,12 +83,15 @@ class ZwiftMemoryScanner {
         if (hasPlaceholder(this._lookup, '<world>')) {
             this._worldId = this._zwift.getWorldId() || 0;
         }
+        if (hasPlaceholder(this._lookup, '<course>')) {
+            this._courseId = this._zwift.getCourseId() || 0;
+        }
 
         const replacePatternPlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, numberToPattern(this._playerId ?? 0)).replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0)).replace(/<flag>/ig, numberToPattern(this._flagId ?? 0)).replace(/<sport>/ig, numberToPattern(this._sportId ?? 0)).replace(/<world>/ig, numberToPattern(this._worldId ?? 0))
+            return (text ?? '').replace(/<player>/ig, numberToPattern(this._playerId ?? 0)).replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0)).replace(/<flag>/ig, numberToPattern(this._flagId ?? 0)).replace(/<sport>/ig, numberToPattern(this._sportId ?? 0)).replace(/<world>/ig, numberToPattern(this._worldId ?? 0)).replace(/<course>/ig, numberToPattern(this._courseId ?? 0));
         }
         const replaceValuePlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<jersey>/ig, this._jerseyId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0)
+            return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<jersey>/ig, this._jerseyId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0).replace(/<course>/ig, this._courseId ?? 0);
         }
 
 
@@ -861,6 +864,19 @@ class ZwiftMemoryScanner {
         playerData.isPortalRoad = (playerData.roadId >= 10000) || false;
 
         playerData.gradientScalePct = 50 + playerData.gradientScale * 25;
+
+        // if playerData does not have a world attribute (the world attribute may have value 0, 1, 2, ...) but have a course attribute, then set world from course
+        if ((playerData.world === undefined) && (playerData.courseId !== undefined)) {
+            if (playerData.courseId == 6) {
+              playerData.world = 1; // Watopia
+            } else if (playerData.courseId == 2) {
+              playerData.world = 2; // Richmond
+            } else if (playerData.courseId >= 7) {
+              playerData.world = playerData.courseId - 4 // London, New York, Makuri Islands, France, etc.
+            }
+        }
+
+        // playerData.extraCourseId = (playerData.f19 & 0xff0000) >> 16;
 
         playerData.units = {
             // fallback values

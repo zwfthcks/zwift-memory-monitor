@@ -232,11 +232,18 @@ class ZwiftMemoryMonitor extends EventEmitter {
       throw new Error('no fetchPatternURL in loadURL')
     } else {
       fetch(fetchPatternURL, options)
-        .then((response) => {
-          return response.json();
+        .then(async (response) => {
+          try {
+            return await response.json();
+          } catch (err) {
+            this.log('Failed to parse JSON from response:', err);
+            this.emit('status.error', 'Invalid JSON in response');
+            this.emit('error', 'Invalid JSON in response');
+            throw new Error('Invalid JSON in response');
+          }
         })
-        .catch()
         .then((data) => {
+          if (!data) return;
           this.logDebug(JSON.stringify(data, '', 2))
 
           let type = data[0]?.type ?? null
@@ -251,7 +258,9 @@ class ZwiftMemoryMonitor extends EventEmitter {
           this.emit('status.loaded', type)
           this.emit('loaded', this.loadedTypes)
         })
-        .catch()
+        .catch((err) => {
+          this.log('Error loading URL:', err);
+        })
     }
   }
 
