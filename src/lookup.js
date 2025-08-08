@@ -68,8 +68,8 @@ const patterns =
                         },
                         mustBeVariable: [
                             // [0x48, 'uint32', '<sport>'], // offset, type, variable
-                            // [0x110, 'uint32', '<world>'], // offset, type, variable
-                            [0x94, 'uint32', '<course>'], // offset, type, variable
+                            [0x110, 'uint32', '<world>'], // offset, type, variable
+                            // [0x94, 'uint32', '<course>'], // offset, type, variable
                         ],
                         mustMatch: [],
                         mustDiffer: [8],
