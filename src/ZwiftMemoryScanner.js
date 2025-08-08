@@ -896,6 +896,7 @@ class ZwiftMemoryScanner {
             cadence: 'rpm',
             calories: 'kcal',
             gradientScalePct: '%',
+            elevationScalePct: '%',
         }
 
     }
