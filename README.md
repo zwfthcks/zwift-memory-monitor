@@ -139,7 +139,7 @@ zmm.once('ready', () => {
 
 ### v2 playerstate file
 
-The old v2 format json is still available in the v2-branch version:
+The old v2 format json is only available in the v2-branch version:
 
 ```
 https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@v2-branch/build/data/lookup-playerstateHeuristic.json
