@@ -2,7 +2,7 @@
 
 Works with Zwift version 1.84+
 
-Last tested with: Zwift version 1.84.0
+Last tested with: Zwift version 1.94.0
 
 Windows only [^1].
 
@@ -139,13 +139,7 @@ zmm.once('ready', () => {
 
 ### v2 playerstate file
 
-The old v2 format json is still available at:
-
-```
-https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@main/build/data/lookup-playerstateHeuristic.json
-```
-
-This URL is **deprecated** and the file will be removed from the main branch. Instead, refer to the v2-branch version:
+The old v2 format json is only available in the v2-branch version:
 
 ```
 https://cdn.jsdelivr.net/gh/zwfthcks/zwift-memory-monitor@v2-branch/build/data/lookup-playerstateHeuristic.json
