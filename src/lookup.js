@@ -42,7 +42,7 @@ const patterns =
                 routeId: [0xa4, 'uint32'],
                 gradientScale: [0xc0, 'uint32'], // 0 ~ 50%, 1 ~ 75%, 2 ~ 100%, 3 ~ 125%  
                 elevationScalePct: [0xc4, 'uint32'], // 50, 75, 100, 125
-                world: [0x110, 'uint32'],
+                // world: [0x110, 'uint32'],
             },
             units: {
                 timestamp: 'ms',
@@ -68,8 +68,8 @@ const patterns =
                         },
                         mustBeVariable: [
                             // [0x48, 'uint32', '<sport>'], // offset, type, variable
-                            [0x110, 'uint32', '<world>'], // offset, type, variable
-                            // [0x94, 'uint32', '<course>'], // offset, type, variable
+                            // [0x110, 'uint32', '<world>'], // offset, type, variable
+                            [0x94, 'uint32', '<course>'], // offset, type, variable
                         ],
                         mustMatch: [],
                         mustDiffer: [8],
@@ -78,16 +78,16 @@ const patterns =
                             heartrate: [0x30, 'uint32', 0], // offset, type, value
                             speed: [0x1c, 'uint32', 0], // offset, type, value
                             cadence_uHz: [0x28, 'uint32', 0], // offset, type, value
-                            world: [0x110, 'uint32', 0], // offset, type, variable
-                            // course: [0x94, 'uint32', 0], // offset, type, variable
+                            // world: [0x110, 'uint32', 0], // offset, type, variable
+                            course: [0x94, 'uint32', 0], // offset, type, variable
                         },
                         mustBeLessThanEqual: {
                             power: [0x34, 'uint32', 2000], // offset, type, value
                             heartrate: [0x30, 'uint32', 300], // offset, type, value
                             speed: [0x1c, 'uint32', 100 * 1000 * 1000], // offset, type, value
                             cadence_uHz: [0x28, 'uint32', 150 * 1000000 / 60], // offset, type, value
-                            world: [0x110, 'uint32', 14], // offset, type, variable
-                            // course: [0x94, 'uint32', 18], // offset, type, variable
+                            // world: [0x110, 'uint32', 14], // offset, type, variable
+                            course: [0x94, 'uint32', 18], // offset, type, variable
                         },
                         
                     },
