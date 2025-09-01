@@ -54,8 +54,12 @@ class ZwiftMemoryScanner {
             return lookup.signatures.some((signature) => {
                 // return true if signature.pattern includes placeholder
                 // or signature.rules.mustBeVariable includes an element that includes placeholder as 3rd element
-                return signature.pattern.includes(placeholder) || signature.rules?.mustBeVariable?.some((mustBeVariable) => {
+              return signature.pattern.includes(placeholder) ||
+                signature.rules?.mustBeVariable?.some((mustBeVariable) => {
                     return mustBeVariable[2].includes(placeholder)
+                }) ||
+                signature.rules?.mustBeVariableIfSet?.some((mustBeVariableIfSet) => {
+                    return mustBeVariableIfSet[2].includes(placeholder)
                 })
             })
         }
@@ -74,6 +78,9 @@ class ZwiftMemoryScanner {
         if (hasPlaceholder(this._lookup, '<jersey>')) {
             this._jerseyId = this._zwift.getJerseyId() || 0;
         }
+        if (hasPlaceholder(this._lookup, '<bike>')) {
+            this._bikeId = this._zwift.getBikeId() || 0;
+        }
         if (hasPlaceholder(this._lookup, '<flag>')) {
             this._flagId = this._zwift.getFlagId() || 0;
         }
@@ -88,10 +95,24 @@ class ZwiftMemoryScanner {
         }
 
         const replacePatternPlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, numberToPattern(this._playerId ?? 0)).replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0)).replace(/<flag>/ig, numberToPattern(this._flagId ?? 0)).replace(/<sport>/ig, numberToPattern(this._sportId ?? 0)).replace(/<world>/ig, numberToPattern(this._worldId ?? 0)).replace(/<course>/ig, numberToPattern(this._courseId ?? 0));
+          return (text ?? '')
+            .replace(/<player>/ig, numberToPattern(this._playerId ?? 0))
+            .replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0))
+            .replace(/<bike>/ig, numberToPattern(this._bikeId ?? 0))
+            .replace(/<flag>/ig, numberToPattern(this._flagId ?? 0))
+            .replace(/<sport>/ig, numberToPattern(this._sportId ?? 0))
+            .replace(/<world>/ig, numberToPattern(this._worldId ?? 0))
+            .replace(/<course>/ig, numberToPattern(this._courseId ?? 0));
         }
         const replaceValuePlaceholders = (text) => {
-            return (text ?? '').replace(/<player>/ig, this._playerId ?? 0).replace(/<jersey>/ig, this._jerseyId ?? 0).replace(/<flag>/ig, this._flagId ?? 0).replace(/<sport>/ig, this._sportId ?? 0).replace(/<world>/ig, this._worldId ?? 0).replace(/<course>/ig, this._courseId ?? 0);
+            return (text ?? '')
+            .replace(/<player>/ig, this._playerId ?? 0)
+            .replace(/<jersey>/ig, this._jerseyId ?? 0)
+            .replace(/<bike>/ig, this._bikeId ?? 0)
+            .replace(/<flag>/ig, this._flagId ?? 0)
+            .replace(/<sport>/ig, this._sportId ?? 0)
+            .replace(/<world>/ig, this._worldId ?? 0)
+            .replace(/<course>/ig, this._courseId ?? 0);
         }
 
 
@@ -136,6 +157,10 @@ class ZwiftMemoryScanner {
                     return [entry[0], entry[1], replaceValuePlaceholders(entry[2])]
                 }) ?? null;
 
+                let mustBeVariableIfSet = signature?.rules?.mustBeVariableIfSet?.map((entry) => {
+                    return [entry[0], entry[1], replaceValuePlaceholders(entry[2])]
+                }) ?? null;
+
                 let addressOffset = signature?.addressOffset || 0;
 
                 this.lasterror = null
@@ -144,6 +169,7 @@ class ZwiftMemoryScanner {
                 let rules = {
                     mustRepeatAt: signature.rules.mustRepeatAt ?? null,
                     mustBeVariable: mustBeVariable ?? [],
+                    mustBeVariableIfSet: mustBeVariableIfSet ?? [],
                     mustMatch: signature.rules.mustMatch ?? [],
                     mustDiffer: signature.rules.mustDiffer ?? [],
                     mustBeGreaterThanEqual: signature.rules.mustBeGreaterThanEqual ?? null,
@@ -326,6 +352,37 @@ class ZwiftMemoryScanner {
               "Not the wanted address:",
               address.toString(16).toUpperCase(),
               "(failed mustBeVariable)"
+            );
+            return false;
+          }
+        }
+
+        if (rules.mustBeVariableIfSet && rules.mustBeVariableIfSet?.length > 0) {
+          //   Example mustBeVariableIfSet: [
+          //     [0x48, 'uint32', '<sport>'], // offset, type, variable
+          //     [0x108, 'uint32', '<world>'], // offset, type, variable
+          // ],
+          // return false if any of the entries in mustBeVariableIfSet fails to match and variable is not 0
+
+          let isCandidate = rules.mustBeVariableIfSet.every(
+            (mustBeVariableIfSetEntry) => {
+              let offsetToRead = mustBeVariableIfSetEntry[0];
+              let type = mustBeVariableIfSetEntry[1];
+              let variable = mustBeVariableIfSetEntry[2];
+
+              let readValue = memoryjs.readMemory(
+                processObject.handle,
+                address + offsetToRead,
+                type
+              );
+              return ((variable ?? 0) == 0) || (readValue == variable);
+            }
+          );
+          if (!isCandidate) {
+            this.logDebug(
+              "Not the wanted address:",
+              address.toString(16).toUpperCase(),
+              "(failed mustBeVariableIfSet)"
             );
             return false;
           }
