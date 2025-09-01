@@ -265,6 +265,13 @@ class ZwiftMemoryMonitor extends EventEmitter {
   }
 
 
+  loadCustom(type, pattern) {
+    if (!Array.isArray(pattern)) {
+      pattern = [pattern]
+    };
+    this._patterns.set(type, pattern)
+  }
+
   get loadedTypes() {
     // return array from this._patterns.keys()
     return Array.from(this._patterns.keys())
