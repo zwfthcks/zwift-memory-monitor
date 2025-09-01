@@ -192,6 +192,7 @@ const patterns =
                 drops: [45*4, 'uint32'], // 
                 achievementLevel: [46*4, 'uint32'], // 
                 age: [51 * 4, 'uint32'], // 
+                bike: [0x4c, 'uint32'], //
             },
             units: {
                 weight: 'g',
