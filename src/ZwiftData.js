@@ -330,7 +330,7 @@ class ZwiftData {
      * Gets the bike ID from log file
      * @returns {number|undefined} The bike ID or undefined if not found
      */
-    getbikeId() {
+    getBikeId() {
         if ((this._bikeId ?? undefined) !== undefined) {
             return this._bikeId
         }

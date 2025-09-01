@@ -205,9 +205,9 @@ const patterns =
                     // pattern: '<player> 00 00 00 00 ' + Array(7*4).fill('? ? ? ?').join(' ') + ' <flag>',
                     pattern: '<player> 00 00 00 00 ',
                     rules: {
-                        mustBeVariable: [
-                            [ 15 * 4, 'uint32', '<jersey>' ],
-                        ],
+                        // mustBeVariable: [
+                        //     [ 15 * 4, 'uint32', '<jersey>' ],
+                        // ],
                         mustBeVariableIfSet: [
                             [ 15 * 4, 'uint32', '<jersey>' ],
                             [ 0x4c, 'uint32', '<bike>' ],
