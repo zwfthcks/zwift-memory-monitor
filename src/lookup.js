@@ -207,12 +207,12 @@ const patterns =
                     rules: {
                         mustBeVariable: [
                             [ 15 * 4, 'uint32', '<jersey>' ],
-                        ]
-                    },
-                    mustBeGreaterThanEqual: {
-                            jersey: [15*4, 'uint32', 1], // offset, type, value
-                            height: [42*4, 'uint32', 1], // offset, type, value
-                            maxhr: [43*4, 'uint32', 1], // offset, type, value
+                        ],
+                        mustBeGreaterThanEqual: {
+                                // jersey: [15*4, 'uint32', 1], // offset, type, value
+                                height: [42*4, 'uint32', 1], // offset, type, value
+                                maxhr: [43*4, 'uint32', 1], // offset, type, value
+                        },
                     },
                     addressOffset: 0
                 }
