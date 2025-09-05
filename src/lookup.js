@@ -205,11 +205,16 @@ const patterns =
                     // pattern: '<player> 00 00 00 00 ' + Array(7*4).fill('? ? ? ?').join(' ') + ' <flag>',
                     pattern: '<player> 00 00 00 00 ',
                     rules: {
-                        mustBeVariable: [
+                        // mustBeVariable: [
+                        //     [ 15 * 4, 'uint32', '<jersey>' ],
+                        // ],
+                        mustBeVariableIfSet: [
                             [ 15 * 4, 'uint32', '<jersey>' ],
+                            [ 0x4c, 'uint32', '<bike>' ],
                         ],
                         mustBeGreaterThanEqual: {
                                 // jersey: [15*4, 'uint32', 1], // offset, type, value
+                                bike: [0x4c, 'uint32', 1], // offset, type, value
                                 height: [42*4, 'uint32', 1], // offset, type, value
                                 maxhr: [43*4, 'uint32', 1], // offset, type, value
                         },

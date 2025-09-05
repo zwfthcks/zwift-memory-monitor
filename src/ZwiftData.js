@@ -327,6 +327,25 @@ class ZwiftData {
     }
 
     /**
+     * Gets the bike ID from log file
+     * @returns {number|undefined} The bike ID or undefined if not found
+     */
+    getBikeId() {
+        if ((this._bikeId ?? undefined) !== undefined) {
+            return this._bikeId
+        }
+        // [7:54:19] [Garage Last Selected] Player Profile Update set Jersey: 363655187, set Bike: 1029279076
+
+        const bike = /\[(?:[^\]]*)\]\s+.*(?:set Bike: )(\d+)/g;
+        let found = this._getLast(bike, 1)
+        if (found) {
+            let bikeId = parseInt(found);
+            this.log(`Zwift seems to run with bike ID: ${bikeId} = ${('00000000' + bikeId.toString(16)).substr(-8)}`)
+            return bikeId
+        }
+    }
+
+    /**
      * Gets the current sport ID from log file
      * @returns {number} The sport ID (0 if not found)
      */
