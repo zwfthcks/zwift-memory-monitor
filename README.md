@@ -2,7 +2,7 @@
 
 Works with Zwift version 1.84+
 
-Last tested with: Zwift version 1.94.0
+Last tested with: Zwift version 1.97.0
 
 Windows only [^1].
 
