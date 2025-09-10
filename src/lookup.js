@@ -214,9 +214,11 @@ const patterns =
                         ],
                         mustBeGreaterThanEqual: {
                                 // jersey: [15*4, 'uint32', 1], // offset, type, value
-                                bike: [0x4c, 'uint32', 1], // offset, type, value
+                                // bike: [0x4c, 'uint32', 1], // offset, type, value
                                 height: [42*4, 'uint32', 1], // offset, type, value
-                                maxhr: [43*4, 'uint32', 1], // offset, type, value
+                                achievementLevel: [5*4, 'uint32', 100], // offset, type, value
+                                weight: [4*4, 'uint32', 1], // offset, type, value
+                                // maxhr: [43*4, 'uint32', 1], // offset, type, value
                         },
                     },
                     addressOffset: 0
