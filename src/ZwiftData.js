@@ -335,8 +335,9 @@ class ZwiftData {
             return this._bikeId
         }
         // [7:54:19] [Garage Last Selected] Player Profile Update set Jersey: 363655187, set Bike: 1029279076
+        // [10:33:16] [Garage Last Selected] Bike set: 1029279076
 
-        const bike = /\[(?:[^\]]*)\]\s+.*(?:set Bike: )(\d+)/g;
+        const bike = /\[(?:[^\]]*)\]\s+.*?(?:set Bike|Bike set): (\d+)/g;
         let found = this._getLast(bike, 1)
         if (found) {
             let bikeId = parseInt(found);
