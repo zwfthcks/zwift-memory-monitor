@@ -12,8 +12,9 @@ class ZwiftMemoryScanner {
 
         /** @type {Map} */
         this.zmm = zmm
-        this._zwift = zmm._zwift
-        this._patternAddressCache = zmm._zwift._patternAddressCache
+        this._zwiftData = zmm._zwiftData
+        this._zwiftProcess = zmm._zwiftProcess
+        this._patternAddressCache = zmm._zwiftProcess._patternAddressCache
         this.log = zmm.log
         this.logDebug = zmm.logDebug
 
@@ -44,7 +45,7 @@ class ZwiftMemoryScanner {
         this.lasterror = null
     }
 
-    start() {
+    async start() {
 
         this.logDebug('start', this._lookup.type)
 
@@ -66,7 +67,7 @@ class ZwiftMemoryScanner {
 
 
         if (hasPlaceholder(this._lookup, '<player>')) {
-            this._playerId = this._zwift.getPlayerId() || 0;
+            this._playerId = (await this._zwiftData.getPlayerId()) || 0;
             if (!this._playerId) {
                 this.lasterror = 'Player ID not found'
                 // throw new Error('Player ID not found')
@@ -76,22 +77,22 @@ class ZwiftMemoryScanner {
             }
         }
         if (hasPlaceholder(this._lookup, '<jersey>')) {
-            this._jerseyId = this._zwift.getJerseyId() || 0;
+            this._jerseyId = (await this._zwiftData.getJerseyId()) || 0;
         }
         if (hasPlaceholder(this._lookup, '<bike>')) {
-            this._bikeId = this._zwift.getBikeId() || 0;
+            this._bikeId = (await this._zwiftData.getBikeId()) || 0;
         }
         if (hasPlaceholder(this._lookup, '<flag>')) {
-            this._flagId = this._zwift.getFlagId() || 0;
+            this._flagId = (await this._zwiftData.getFlagId()) || 0;
         }
         if (hasPlaceholder(this._lookup, '<sport>')) {
-            this._sportId = this._zwift.getSportId() || 0;
+            this._sportId = (await this._zwiftData.getSportId()) || 0;
         }
         if (hasPlaceholder(this._lookup, '<world>')) {
-            this._worldId = this._zwift.getWorldId() || 0;
+            this._worldId = (await this._zwiftData.getWorldId()) || 0;
         }
         if (hasPlaceholder(this._lookup, '<course>')) {
-            this._courseId = this._zwift.getCourseId() || 0;
+            this._courseId = (await this._zwiftData.getCourseId()) || 0;
         }
 
         const replacePatternPlaceholders = (text) => {
@@ -117,10 +118,10 @@ class ZwiftMemoryScanner {
 
 
         // verify that the zwift process is alive, otherwise emit an error and stop
-        if (this._zwift.process) {
-            this._zwift.verifyProcess()
+        if (this._zwiftProcess.process) {
+            this._zwiftProcess.verifyProcess()
         }
-        if (!this._zwift.process) {
+        if (!this._zwiftProcess.process) {
             this.lasterror = 'Could not find a Zwift process'
             this.zmm.emit('status.scanner.error', this._type, this.lasterror)
             this.stop()
@@ -177,7 +178,7 @@ class ZwiftMemoryScanner {
                 }
 
                 // search for the pattern in memory
-                this._searchWithrulesSignature(this._zwift.process, pattern, rules, addressOffset, this._checkBaseAddress)
+                this._searchWithrulesSignature(this._zwiftProcess.process, pattern, rules, addressOffset, this._checkBaseAddress)
                 
                 return this._started // will break iteration on first pattern found because this._started is set to true in _checkBaseAddress on success
 
@@ -210,10 +211,10 @@ class ZwiftMemoryScanner {
         this._baseaddress = address
         this.logDebug(`base address: 0x${this._baseaddress.toString(16)}`);
 
-        if (this?._baseaddress && this._zwift.process) {
+        if (this?._baseaddress && this._zwiftProcess.process) {
             // verify by reading back from memory
             try {
-                const value = memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)
+                const value = memoryjs.readMemory(this._zwiftProcess.process.handle, this._baseaddress, memoryjs.UINT32)
                 this.logDebug(`value: ${value} = 0x${value.toString(16)}`);
 
                 // if (value != this._playerid) {
@@ -227,7 +228,7 @@ class ZwiftMemoryScanner {
                     this._writeCachedScanFile({
                         pattern: this._pattern,
 
-                        processObject: this._zwift.process,
+                        processObject: this._zwiftProcess.process,
                         baseaddress: this._baseaddress
                     })
                 }
@@ -255,7 +256,7 @@ class ZwiftMemoryScanner {
             this.zmm.emit('status.scanner.started', this._type)
 
             if (this._options.debug) {
-                this.zmm.emit('debug', { type: this._type, baseaddress: this._baseaddress, addresses: this._addresses, process: this._zwift.process })
+                this.zmm.emit('debug', { type: this._type, baseaddress: this._baseaddress, addresses: this._addresses, process: this._zwiftProcess.process })
             }
 
         }
@@ -810,22 +811,22 @@ class ZwiftMemoryScanner {
         if (this._started) {
             try {
 
-                if (!this?._zwift.process?.th32ProcessID || !memoryjs.processExists(this._zwift.process.th32ProcessID)) {
-                    this.lasterror = `Zwift process not found (${this?._zwift.process?.th32ProcessID})`
+                if (!this?._zwiftProcess.process?.th32ProcessID || !memoryjs.processExists(this._zwiftProcess.process.th32ProcessID)) {
+                    this.lasterror = `Zwift process not found (${this?._zwiftProcess.process?.th32ProcessID})`
                     this.zmm.emit('status.scanner.error', this._type, this.lasterror)
                     this.stop()
                     return
                 }
 
                 Object.keys(this._lookup.offsets).forEach((key) => {
-                    playerData[key] = memoryjs.readMemory(this?._zwift.process?.handle, this._addresses[key][0], this._addresses[key][1])
+                    playerData[key] = memoryjs.readMemory(this?._zwiftProcess.process?.handle, this._addresses[key][0], this._addresses[key][1])
                 })
                 if (this._lookup.units) {
                     playerData.units = {...this._lookup.units}
                 }
 
                 // verify by reading first 4 bytes of pattern back from memory
-                if (!this._pattern.startsWith(numberToPattern(memoryjs.readMemory(this._zwift.process.handle, this._baseaddress, memoryjs.UINT32)))) {
+                if (!this._pattern.startsWith(numberToPattern(memoryjs.readMemory(this._zwiftProcess.process.handle, this._baseaddress, memoryjs.UINT32)))) {
                     // Probably because Zwift was closed...
                     this.lasterror = 'Could not verify pattern in memory'
                     throw new Error(this.lasterror)
@@ -993,11 +994,11 @@ class ZwiftMemoryScanner {
 
         cachedScan = this._readCachedScanFile()
 
-        if (cachedScan && this._zwift.process) {
+        if (cachedScan && this._zwiftProcess.process) {
             // compare with the current Zwift process object:
-            if ((this._zwift.process?.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
-                (this._zwift.process?.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
-                (this._zwift.process?.szExeFile !== cachedScan?.processObject?.szExeFile)) {
+            if ((this._zwiftProcess.process?.th32ProcessID !== cachedScan?.processObject?.th32ProcessID) ||
+                (this._zwiftProcess.process?.th32ParentProcessID !== cachedScan?.processObject?.th32ParentProcessID) ||
+                (this._zwiftProcess.process?.szExeFile !== cachedScan?.processObject?.szExeFile)) {
                 // Cached scan is not for the current process object so ignore and delete it
                 this.logDebug('Cached scan does not match current Zwift process, deleting cached scan file')
                 cachedScan = null
@@ -1005,7 +1006,7 @@ class ZwiftMemoryScanner {
                 this._deleteCachedScanFile()
             }
         }
-        if (!this._zwift.process) {
+        if (!this._zwiftProcess.process) {
             // no process object, so delete the cache
             this.logDebug('No Zwift process found, deleting cached scan file')
             cachedScan = null
