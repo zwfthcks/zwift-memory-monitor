@@ -66,7 +66,7 @@ class ZwiftMemoryScanner {
         }
 
 
-        if (hasPlaceholder(this._lookup, '<player>')) {
+        if (hasPlaceholder(this._lookup, '<player>') || hasPlaceHolder(this._lookup, '<player64>')) {
             this._playerId = (await this._zwiftData.getPlayerId()) || 0;
             if (!this._playerId) {
                 this.lasterror = 'Player ID not found'
@@ -97,7 +97,8 @@ class ZwiftMemoryScanner {
 
         const replacePatternPlaceholders = (text) => {
           return (text ?? '')
-            .replace(/<player>/ig, numberToPattern(this._playerId ?? 0))
+            .replace(/<player>/ig, numberToPattern(this._playerId ?? 0, 4))
+            .replace(/<player64>/ig, numberToPattern(this._playerId ?? 0, 8))
             .replace(/<jersey>/ig, numberToPattern(this._jerseyId ?? 0))
             .replace(/<bike>/ig, numberToPattern(this._bikeId ?? 0))
             .replace(/<flag>/ig, numberToPattern(this._flagId ?? 0))
@@ -107,7 +108,8 @@ class ZwiftMemoryScanner {
         }
         const replaceValuePlaceholders = (text) => {
             return (text ?? '')
-            .replace(/<player>/ig, this._playerId ?? 0)
+            .replace(/<player>/ig, Number(this._playerId ?? 0))
+            .replace(/<player64>/ig, Number(this._playerId ?? 0))
             .replace(/<jersey>/ig, this._jerseyId ?? 0)
             .replace(/<bike>/ig, this._bikeId ?? 0)
             .replace(/<flag>/ig, this._flagId ?? 0)
@@ -820,6 +822,10 @@ class ZwiftMemoryScanner {
 
                 Object.keys(this._lookup.offsets).forEach((key) => {
                     playerData[key] = memoryjs.readMemory(this?._zwiftProcess.process?.handle, this._addresses[key][0], this._addresses[key][1])
+                    // if this._adresses[key][1] is 'uint64' or 'int64', then convet to Number (from BigInt)
+                    if (this._addresses[key][1] == 'uint64' || this._addresses[key][1] == 'int64') {
+                        playerData[key] = Number(playerData[key])
+                    }
                 })
                 if (this._lookup.units) {
                     playerData.units = {...this._lookup.units}
