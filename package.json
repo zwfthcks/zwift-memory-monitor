@@ -38,7 +38,7 @@
     "@zwfthcks/zwift-data": "github:zwfthcks/zwift-data",
     "memoryjs": "github:zwfthcks/memoryjs",
     "platform-paths": "^1.2.2",
-    "semver": "^7.7.2",
+    "semver": "^7.7.3",
     "zwift-data": "github:zwfthcks/zwift-data"
   },
   "devDependencies": {
