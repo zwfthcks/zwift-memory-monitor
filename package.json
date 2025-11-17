@@ -1,6 +1,6 @@
 {
   "name": "@zwfthcks/zwift-memory-monitor",
-  "version": "3.5.2",
+  "version": "3.6.0",
   "description": "monitor Zwift memory and emit events for player state updates",
   "main": "src/index.js",
   "module": "src/index.mjs",
