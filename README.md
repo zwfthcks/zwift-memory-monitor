@@ -13,6 +13,26 @@ Windows only [^1].
 npm install https://github.com/zwfthcks/zwift-memory-monitor
 `````
 
+### ESM / CommonJS
+
+This package supports both CommonJS and ESM consumers. Use whichever import style your project requires:
+
+- CommonJS (Node `require`):
+
+```
+const ZwiftMemoryMonitor = require('@zwfthcks/zwift-memory-monitor');
+const zmm = new ZwiftMemoryMonitor();
+```
+
+- ESM (Node `import`):
+
+```js
+import ZwiftMemoryMonitor from '@zwfthcks/zwift-memory-monitor';
+const zmm = new ZwiftMemoryMonitor();
+```
+
+Under the hood the package provides conditional `exports` in `package.json` so both module systems resolve the correct entrypoint.
+
 v3 contains breaking changes. v2 can be installed from https://github.com/zwfthcks/zwift-memory-monitor#v2-branch
 
 
