@@ -35,8 +35,8 @@ const patterns =
                 altitude: [0x6c, 'float'], 
                 y: [0x80, 'float'], 
                 watching: [0x70, 'uint32'],
-                eventDistance: [0x90, 'float'], // unit cm
                 groupId: [0x78, 'uint32'],
+                eventDistance: [0x90, 'float'], // unit cm
                 courseId: [0x94, 'uint32'],
                 checkPointId: [0x98, 'uint32'],
                 routeId: [0xa4, 'uint32'],
