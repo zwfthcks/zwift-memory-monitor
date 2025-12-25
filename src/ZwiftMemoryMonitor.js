@@ -385,10 +385,10 @@ class ZwiftMemoryMonitor extends EventEmitter {
     }
 
 
-    let started = true;
-    for (const [type, scanner] of this.scanners.entries()) {
-      started = started && (scanner.start());
-      }
+    const results = await Promise.all(
+      Array.from(this.scanners.values()).map(scanner => scanner.start())
+    );
+    const started = results.every(Boolean);
       
     // console.log('started', started)
     if (!started) {
