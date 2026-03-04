@@ -32,6 +32,7 @@ const patterns =
                 f20: [0x54, 'uint32'], 
                 work: [0x64, 'uint32'],  // unit mWh
                 x: [0x68, 'float'], 
+                z: [0x6c, 'float'], 
                 altitude: [0x6c, 'float'], 
                 y: [0x80, 'float'], 
                 watching: [0x70, 'uint32'],
@@ -56,6 +57,7 @@ const patterns =
                 work: 'mWh',
                 eventDistance: 'cm',
                 altitude: 'cm',
+                z: 'cm',
             },
             // signatures: patterns to search for
             signatures: [
